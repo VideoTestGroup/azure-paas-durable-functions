@@ -5,7 +5,7 @@ public class ActivityAction
     // IMPORTANT: 
     // When changing ContainerName make sure to change EventGrid's topic filter
     // Subject Begins With: blobServices/default/containers/files
-    public const string ContainerName = "images";
+    public const string ContainerName = "files";
     public static TimeSpan Threshold =
         TimeSpan.TryParse(System.Environment.GetEnvironmentVariable("ScavengerOutdatedThreshold"), out TimeSpan span) ? span : TimeSpan.FromMinutes(5);
     // public static string ContainerName => System.Environment.GetEnvironmentVariable("ContainerName");
