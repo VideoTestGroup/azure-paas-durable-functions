@@ -26,7 +26,9 @@ public class BlobListener
         ActivityAction activity = new ActivityAction(tags);
 
         string blobNameWithoutExt = Path.GetFileNameWithoutExtension(blobName);
+        log.LogInformation($"blobNameWithoutExt: {blobNameWithoutExt}");
         activity.Namespace = blobNameWithoutExt.Split("_").LastOrDefault() ?? "P3";
+        log.LogInformation($"activity: {activity}");
 
         Response response = await blobClient.WriteTagsAsync(tags);
         if(response.IsError)
