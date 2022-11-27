@@ -23,12 +23,13 @@ public class BlobListener
         BlobProperties props = await blobClient.GetPropertiesAsync();
         log.LogInformation($"[BlobListener] BlobProperties: {props}");
         BlobTags tags = new BlobTags(props, blobClient);
-        ActivityAction activity = new ActivityAction(tags);
 
         string blobNameWithoutExt = Path.GetFileNameWithoutExtension(blobName);
         log.LogInformation($"blobNameWithoutExt: {blobNameWithoutExt}");
-        activity.Namespace = blobNameWithoutExt.Split("_").LastOrDefault() ?? "P3";
-        log.LogInformation($"activity: {activity}");
+        tags.Namespace = blobNameWithoutExt.Split("_").LastOrDefault() ?? "P3";
+
+        ActivityAction activity = new ActivityAction(tags);
+
 
         Response response = await blobClient.WriteTagsAsync(tags);
         if(response.IsError)
