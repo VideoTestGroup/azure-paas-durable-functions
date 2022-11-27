@@ -49,7 +49,7 @@ public class ActivityAction
     }
 
     public string QueryStatusAndNamespace =>
-        $@"""Status""='{QueryStatus.ToString()}' AND ""Namespace""= '{Namespace}'";
+        $@"""Status""='{QueryStatus.ToString()}' AND ""Namespace""= '{Namespace}' AND ""BatchId""= '{QueryBatchId}'";
 
     public string QueryStatusAndThreshold =>
         $@"""Status""='{QueryStatus.ToString()}' AND ""Modified"" < '{DateTime.UtcNow.Add(Threshold).ToFileTimeUtc()}'";
