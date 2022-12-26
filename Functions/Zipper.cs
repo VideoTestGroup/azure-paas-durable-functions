@@ -9,8 +9,9 @@ public static class Zipper
     [FunctionName(nameof(Zipper))]
     public static async Task<ActivityAction> Run(
         [ActivityTrigger] ActivityAction activity,
-        [Blob("zip/{activity.OverrideBatchId}.zip", FileAccess.Write, Connection = "AzureWebJobsZipStorage")] Stream blob,
+        //[Blob("zip/{activity.OverrideBatchId}.zip", FileAccess.Write, Connection = "AzureWebJobsZipStorage")] Stream blob,
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient client,
+        [Blob("zip", Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
         ILogger log)
     {
         log.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:{activity}");
@@ -28,7 +29,8 @@ public static class Zipper
 
         if (jobs.Count < 1)
         {
-            log.LogWarning($"[Zipper] No blobs found for activity:{activity}");
+            // TODO - (FIX) - the zip is already created but it is empty. Check why there is no jobs to handle and also check how to create the zip only if needed.
+            log.LogWarning($"[Zipper] No blobs found for activity: {activity}");
             return activity;
         }
 
@@ -70,7 +72,9 @@ public static class Zipper
                 }
                 // zipStream.CopyTo(blob);
                 byte[] byteArray = zipStream.ToArray();
-                await blob.WriteAsync(byteArray, 0, byteArray.Length);
+                log.LogInformation($"[Zipper] creating zip strean: {activity.OverrideBatchId}.zip");
+                var blobStream = await zipClient.GetBlobClient($"{activity.OverrideBatchId}.zip").OpenWriteAsync(true);
+                await blobStream.WriteAsync(byteArray, 0, byteArray.Length);
                 log.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
             }
         }

@@ -15,16 +15,16 @@ public class Orchestrator
         // activity = await context.CallActivityAsync<ActivityAction>(nameof(Tokenizer), activity);
         // log.LogInformation($"[Orchestrator] ActivityAction with token {activity}");
 
-        //2. Check for ready batch files    ++++++++++++++++++++++++++++++++++++++
+        // 2. Check for ready batch files    ++++++++++++++++++++++++++++++++++++++
         activity = await context.CallActivityAsync<ActivityAction>(nameof(Collector), activity);
-        //2.5 Check if batch created
+        // 2.5 Check if batch created
         if (string.IsNullOrWhiteSpace(activity.OverrideBatchId))
         {
             log.LogInformation($"[Orchestrator] No batch created. ActivityAction {activity}");
             return;
         }
 
-        //3. Zip Files
+        // 3. Zip Files
         activity.QueryStatus = BlobStatus.Batched;
         log.LogInformation($"[Orchestrator] Zipping files. ActivityAction {activity}");
         activity = await context.CallActivityAsync<ActivityAction>(nameof(Zipper), activity);

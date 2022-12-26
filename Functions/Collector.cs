@@ -13,7 +13,7 @@ public class Collector
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
     {
-        log.LogInformation($"[Collector] ActivityTrigger triggered Function activity:{activity}");
+        log.LogInformation($"[Collector] ActivityTrigger triggered Function activity: {activity}");
         List<BlobTags> tags = new List<BlobTags>();
         await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == activity.QueryStatus && t.Namespace == activity.Namespace))
         {

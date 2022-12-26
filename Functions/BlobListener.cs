@@ -1,5 +1,6 @@
 using Azure.Messaging.EventGrid;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
+using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
 
@@ -25,15 +26,26 @@ public class BlobListener
         BlobTags tags = new BlobTags(props, blobClient);
 
         string blobNameWithoutExt = Path.GetFileNameWithoutExtension(blobName);
-        log.LogInformation($"blobNameWithoutExt: {blobNameWithoutExt}");
-        tags.Namespace = blobNameWithoutExt.Split("_").LastOrDefault() ?? "P3";
+        //log.LogInformation($"blobNameWithoutExt: {blobNameWithoutExt}");
+        log.LogInformation($"[BlobListener]: BlobNameWithoutExt: {blobNameWithoutExt}");
+        string @namespace = blobNameWithoutExt.Split("_").LastOrDefault();
+        if (Regex.IsMatch(@namespace, "(P|p)[1-4]"))
+        {
+            tags.Namespace = @namespace.ToUpper();
+        }
+        else
+        {
+            tags.Namespace = "P3";
+        }
 
         ActivityAction activity = new ActivityAction(tags);
 
-
         Response response = await blobClient.WriteTagsAsync(tags);
-        if(response.IsError)
+        if (response.IsError)
+        {
             log.LogError(new EventId(1001), response.ToString());
+        }
+ 
         log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
         await starter.StartNewAsync<ActivityAction>(nameof(Orchestrator), activity);
     }

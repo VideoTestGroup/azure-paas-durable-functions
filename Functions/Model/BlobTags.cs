@@ -79,6 +79,7 @@ public class BlobTags
     public BlobTags(BlobItem blobItem)
     {
         Initialize();
+        // FIX - Sometimes the tags list is null - see errors in logs
         blobItem.Tags.ToList().ForEach(x => tags[x.Key] = x.Value);
         Name = blobItem.Name;
     }
