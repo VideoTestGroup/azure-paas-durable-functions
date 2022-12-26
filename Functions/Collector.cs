@@ -5,7 +5,8 @@ public class Collector
     public static string AzureWebJobsFTPStorage { get; set; } = System.Environment.GetEnvironmentVariable("AzureWebJobsFTPStorage");
     public static long ZipBatchSizeMB { get; set; } = long.TryParse(System.Environment.GetEnvironmentVariable("ZipBatchSizeMB"), out long size) ? size : 10485760;
 
-
+    public static TimeSpan ScavengerOutdatedThreshold { get; set; } =
+            TimeSpan.TryParse(System.Environment.GetEnvironmentVariable("ScavengerOutdatedThreshold"), out TimeSpan span) ? span : TimeSpan.FromMinutes(5);
 
     [FunctionName(nameof(Collector))]
     public static async Task<ActivityAction> Run(
@@ -15,6 +16,7 @@ public class Collector
     {
 
         List<BlobTags> tags = new List<BlobTags>();
+        bool hasOutdateBlobs = false;
         try
         {
             log.LogInformation($"[Collector] ActivityTrigger triggered Function activity: {activity}");
@@ -22,6 +24,7 @@ public class Collector
             {
                 log.LogInformation($"[Collector] found relevant blob {tag.Name}");
                 activity.Total += tag.Length;
+                hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(ScavengerOutdatedThreshold).ToFileTimeUtc();
                 tags.Add(tag);
             }
         }
@@ -32,7 +35,7 @@ public class Collector
         }
 
         log.LogInformation($"[Collector] found {tags.Count} blobs in total size {activity.Total.Bytes2Megabytes()}MB(/{ZipBatchSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
-        if (activity.Total.Bytes2Megabytes() < ZipBatchSizeMB) return activity;
+        if (activity.Total.Bytes2Megabytes() < ZipBatchSizeMB && !hasOutdateBlobs) return activity;
 
         //Create batch id
         activity.OverrideBatchId = ActivityAction.EnlistBatchId(activity.Namespace);

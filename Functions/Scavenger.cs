@@ -20,7 +20,14 @@ namespace ImageIngest.Functions
             ILogger log)
         {
             log.LogInformation($"[Scavenger] Timer trigger function executed at: {DateTime.Now}");
-            await starter.StartNewAsync(nameof(ScavengerOrchestrator));
+            List<string> namespaces = new List<string>() { "P1", "P2", "P3", "P4" };
+            foreach (var @namespace in namespaces)
+            {
+                log.LogInformation($"[Scavenger] trigger Orchestrator for namespace: {@namespace}");
+                await starter.StartNewAsync(nameof(Orchestrator),
+                    new ActivityAction() { QueryStatus = BlobStatus.Pending, Namespace = @namespace });
+                log.LogInformation($"[Scavenger] finish Orchestrator for namespace: {@namespace}");
+            }
         }
     }
 }
