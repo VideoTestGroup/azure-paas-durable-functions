@@ -75,6 +75,7 @@ public static class Zipper
                 log.LogInformation($"[Zipper] creating zip strean: {activity.OverrideBatchId}.zip");
                 var blobStream = await zipClient.GetBlobClient($"{activity.OverrideBatchId}.zip").OpenWriteAsync(true);
                 await blobStream.WriteAsync(byteArray, 0, byteArray.Length);
+                await blobStream.DisposeAsync();
                 log.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
             }
         }
