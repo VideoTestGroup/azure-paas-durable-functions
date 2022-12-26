@@ -73,14 +73,13 @@ public class BlobTags
     public BlobTags(IDictionary<string, string> origin)
     {
         Initialize();
-        origin.ToList().ForEach(x => tags[x.Key] = x.Value);
+        origin?.ToList()?.ForEach(x => tags[x.Key] = x.Value);
     }
 
     public BlobTags(BlobItem blobItem)
     {
         Initialize();
-        // FIX - Sometimes the tags list is null - see errors in logs
-        blobItem.Tags.ToList().ForEach(x => tags[x.Key] = x.Value);
+        blobItem.Tags?.ToList()?.ForEach(x => tags[x.Key] = x.Value);
         Name = blobItem.Name;
     }
 
