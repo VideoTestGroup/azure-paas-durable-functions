@@ -17,6 +17,7 @@ public class Collector
         List<BlobTags> tags = new List<BlobTags>();
         await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == activity.QueryStatus && t.Namespace == activity.Namespace))
         {
+            log.LogInformation($"[Collector] found relevant blob {tag.Name}");
             activity.Total += tag.Length;
             tags.Add(tag);
         }
