@@ -16,7 +16,6 @@ namespace ImageIngest.Functions
         [FunctionName(nameof(Scavenger))]
         public async Task Run(
             [TimerTrigger("0 */1 * * * *")] TimerInfo myTimer,
-            [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log)
         {
