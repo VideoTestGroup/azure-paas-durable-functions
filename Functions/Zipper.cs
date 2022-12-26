@@ -9,7 +9,6 @@ public static class Zipper
     [FunctionName(nameof(Zipper))]
     public static async Task<ActivityAction> Run(
         [ActivityTrigger] ActivityAction activity,
-        //[Blob("zip/{activity.OverrideBatchId}.zip", FileAccess.Write, Connection = "AzureWebJobsZipStorage")] Stream blob,
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient client,
         [Blob("zip", Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
         ILogger log)
@@ -29,7 +28,6 @@ public static class Zipper
 
         if (jobs.Count < 1)
         {
-            // TODO - (FIX) - the zip is already created but it is empty. Check why there is no jobs to handle and also check how to create the zip only if needed.
             log.LogWarning($"[Zipper] No blobs found for activity: {activity}");
             return activity;
         }
