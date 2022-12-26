@@ -13,13 +13,22 @@ public class Collector
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
     {
-        log.LogInformation($"[Collector] ActivityTrigger triggered Function activity: {activity}");
+
         List<BlobTags> tags = new List<BlobTags>();
-        await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == activity.QueryStatus && t.Namespace == activity.Namespace))
+        try
         {
-            log.LogInformation($"[Collector] found relevant blob {tag.Name}");
-            activity.Total += tag.Length;
-            tags.Add(tag);
+            log.LogInformation($"[Collector] ActivityTrigger triggered Function activity: {activity}");
+            await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == activity.QueryStatus && t.Namespace == activity.Namespace))
+            {
+                log.LogInformation($"[Collector] found relevant blob {tag.Name}");
+                activity.Total += tag.Length;
+                tags.Add(tag);
+            }
+        }
+        catch (Exception ex)
+        {
+            log.LogError($"[Collector] Error in query relevant blobs {ex}");
+            return activity;
         }
 
         log.LogInformation($"[Collector] found {tags.Count} blobs in total size {activity.Total.Bytes2Megabytes()}MB(/{ZipBatchSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
