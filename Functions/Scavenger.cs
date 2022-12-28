@@ -7,7 +7,7 @@
 
         [FunctionName(nameof(Scavenger))]
         public async Task Run(
-            [TimerTrigger("/%ScavengerTimer% * * * * *")] TimerInfo myTimer,
+            [TimerTrigger("*/%ScavengerTimer% * * * * *")] TimerInfo myTimer,
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log)
         {
