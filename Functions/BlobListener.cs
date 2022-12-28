@@ -6,11 +6,10 @@ namespace ImageIngest.Functions;
 
 public class BlobListener
 {
-    public static string EventGridSubjectPrefix { get; set; } = System.Environment.GetEnvironmentVariable("EventGridSubjectPrefix");
+    public static string EventGridSubjectPrefix { get; set; } = Environment.GetEnvironmentVariable("EventGridSubjectPrefix");
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
-        // [BlobTrigger(ActivityAction.ContainerName + "/{name}", Source = BlobTriggerSource.EventGrid, Connection = "AzureWebJobsFTPStorage")] BlobClient blobClient,
         [EventGridTrigger] EventGridEvent blobEvent, 
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         [DurableClient] IDurableOrchestrationClient starter,
@@ -26,19 +25,9 @@ public class BlobListener
         BlobTags tags = new BlobTags(props, blobClient);
 
         string blobNameWithoutExt = Path.GetFileNameWithoutExtension(blobName);
-        //log.LogInformation($"blobNameWithoutExt: {blobNameWithoutExt}");
         log.LogInformation($"[BlobListener]: BlobNameWithoutExt: {blobNameWithoutExt}");
-        string @namespace = blobNameWithoutExt.Split("_").LastOrDefault();
-        if (Regex.IsMatch(@namespace, "(P|p)[1-4]"))
-        {
-            tags.Namespace = @namespace.ToUpper();
-        }
-        else
-        {
-            tags.Namespace = "P3";
-        }
 
-        ActivityAction activity = new ActivityAction(tags);
+        tags.Namespace = GetBlobNamespace(blobNameWithoutExt);     
 
         Response response = await blobClient.WriteTagsAsync(tags);
         if (response.IsError)
@@ -47,6 +36,19 @@ public class BlobListener
         }
  
         log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
-        await starter.StartNewAsync<ActivityAction>(nameof(Orchestrator), activity);
+        //await starter.StartNewAsync<string>(nameof(Orchestrator), tags.Namespace);
+    }
+
+    private static string GetBlobNamespace(string blobName)
+    {
+        string @namespace = blobName.Split("_").LastOrDefault();
+        if (Regex.IsMatch(@namespace, "(P|p)[1-4]"))
+        {
+            return EnvironmentVariablesExtensions.GetNamespaceVariable(@namespace.ToUpper());
+        }
+        else
+        {
+            return EnvironmentVariablesExtensions.GetNamespaceVariable(Environment.GetEnvironmentVariable("DefaultBlobType"));
+        }
     }
 }

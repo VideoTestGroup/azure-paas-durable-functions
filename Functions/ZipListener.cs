@@ -9,9 +9,8 @@ public class ZipListener
     {
         log.LogInformation($"[ZipListener] Function triggered on blob {blobClient.Name}");
         ActivityAction activity = ActivityAction.ExtractBatchIdAndNamespace(blobClient.Name);
-        activity.QueryStatus = BlobStatus.Zipped;
-
-        log.LogInformation($"[ZipListener] Delete by query '{activity.QueryStatusAndNamespace}'. Details {activity}");
-        await blobContainerClient.DeleteByQueryAsync(activity.QueryStatusAndNamespace);
-    }
+        string deleteQuery = $@"""Status""='{BlobStatus.Zipped}' AND ""Namespace""= '{activity.Namespace}' AND ""BatchId""= '{activity.BatchId}'";
+        log.LogInformation($"[ZipListener] Delete by query '{deleteQuery}'. Details {activity}");
+        await blobContainerClient.DeleteByQueryAsync(deleteQuery);
+    } 
 }

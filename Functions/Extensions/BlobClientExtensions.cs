@@ -12,18 +12,18 @@ public static class BlobClientExtensions
         }
     }
 
-    // //TODO: use tag indexing FindBlobsByTagsAsync
-    // public static async IAsyncEnumerable<BlobTags> QueryAsync(this BlobContainerClient client, string query)
-    // {
-    //     //List<BlobTags> tags = new List<BlobTags>();
-    //     await foreach (var page in client.FindBlobsByTagsAsync(query).AsPages())
-    //     {
-    //         foreach (var blob in page.Values)
-    //         {
-    //             yield return new BlobTags(blob);
-    //         }
-    //     }
-    // }
+     ////TODO: use tag indexing FindBlobsByTagsAsync
+     //public static async IAsyncEnumerable<BlobTags> QueryAsync(this BlobContainerClient client, string query)
+     //{
+     //    //List<BlobTags> tags = new List<BlobTags>();
+     //    await foreach (var page in client.FindBlobsByTagsAsync(query).AsPages())
+     //    {
+     //        foreach (var blob in page.Values)
+     //        {
+     //            yield return new BlobTags(blob);
+     //        }
+     //    }
+     //}
 
     public static async Task DeleteByQueryAsync(this BlobContainerClient client, string query)
     {

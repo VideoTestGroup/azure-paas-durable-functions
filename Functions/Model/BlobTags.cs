@@ -27,6 +27,7 @@ public class BlobTags
         get => tags.GetValue<string>(nameof(Name));
         set => tags[nameof(Name)] = value;
     }
+
     public string Container
     {
         get => tags.GetValue<string>(nameof(Container));
@@ -44,6 +45,7 @@ public class BlobTags
         get => tags.TryGetValue(nameof(BatchId), out string batchId) ? batchId : string.Empty;
         set => tags[nameof(BatchId)] = value;
     }
+
     public long Length
     {
         get => tags.GetValue<long>(nameof(Length));
@@ -70,6 +72,7 @@ public class BlobTags
     }
 
     public BlobTags() { }
+
     public BlobTags(IDictionary<string, string> origin)
     {
         Initialize();

@@ -1,17 +1,26 @@
 {
     "IsEncrypted": false,
-    "Values": {
-        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-        "AzureWebJobsFTPStorage": "UseDevelopmentStorage=true",
-        "AzureWebJobsZipStorage":"UseDevelopmentStorage=true",
-        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-        "FUNCTIONS_EXTENSION_VERSION": "~4",
-        "FUNCTIONS_WORKER_PROCESS_COUNT": "2",
-        "ZipBatchSizeMB": 10,
-        "ScavengerPageSize": 20,
-        "ScavengerOutdatedThreshold":"05:00",
-        "LeaseDuration": "00:00:30",
-        "EventGridSubjectPrefix": "/blobServices/default/containers/files/blobs/",
-        "SasDuration": "00:01:30"
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsFTPStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsZipStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+    "FUNCTIONS_WORKER_PROCESS_COUNT": "2",
+    "ZipBatchSizeMB": 10,
+    "ScavengerPageSize": 20,
+    "ScavengerTimer": 5,
+    "BlobOutdatedThreshold": "05:00",
+    "LeaseDuration": "00:00:30",
+    "EventGridSubjectPrefix": "/blobServices/default/containers/files/blobs/",
+    "SasDuration": "00:01:30",
+    "DefaultBlobType": "P1",
+    "Namespaces": "94_001,94_0038",
+    "NamespacesMapper": {
+      "P1": "94_001",
+      "P2": "94_0038",
+      "P3": "94_0038",
+      "P4": "94_0038"
     }
+  }
 }
