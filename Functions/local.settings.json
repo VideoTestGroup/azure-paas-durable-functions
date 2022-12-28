@@ -1,5 +1,5 @@
 {
-    "IsEncrypted": false,
+  "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "AzureWebJobsFTPStorage": "UseDevelopmentStorage=true",
@@ -16,11 +16,9 @@
     "SasDuration": "00:01:30",
     "DefaultBlobType": "P1",
     "Namespaces": "94_001,94_0038",
-    "NamespacesMapper": {
-      "P1": "94_001",
-      "P2": "94_0038",
-      "P3": "94_0038",
-      "P4": "94_0038"
-    }
+    "P1Mapper": "94_001",
+    "P2Mapper": "94_0038",
+    "P3Mapper": "94_0038",
+    "P4Mapper": "94_0038"
   }
 }
