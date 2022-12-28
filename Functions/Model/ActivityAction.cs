@@ -13,15 +13,15 @@ public class ActivityAction
     public static string CreateBatchId(string @namespace)
     {
         // TODO - Check if the zip format name is ok like that.
-        return $"{@namespace}-{DateTime.UtcNow.ToString("yyyyMMddHHmmssfff")}";
+        return $"{@namespace}_{DateTime.UtcNow.ToString("yyyyMMddHHmmssfff")}";
     }
 
     public static ActivityAction ExtractBatchIdAndNamespace(string batchZipFilename)
     {
-        int idx = batchZipFilename.LastIndexOf('-');
+        int idx = batchZipFilename.LastIndexOf('_');
 
         if (idx < 0)
-            throw new ArgumentException($"batchZipFilename does not contains Namespace, looking for last delimiter '-'", "batchZipFilename");
+            throw new ArgumentException($"batchZipFilename does not contains Namespace, looking for last delimiter '_'", "batchZipFilename");
 
         string batchId = Path.GetFileNameWithoutExtension(batchZipFilename);
         ActivityAction activity = new ActivityAction

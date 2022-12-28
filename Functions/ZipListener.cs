@@ -8,9 +8,9 @@ public class ZipListener
         ILogger log)
     {
         log.LogInformation($"[ZipListener] Function triggered on blob {blobClient.Name}");
-        ActivityAction activity = ActivityAction.ExtractBatchIdAndNamespace(blobClient.Name);
-        string deleteQuery = $@"""Status""='{BlobStatus.Zipped}' AND ""Namespace""= '{activity.Namespace}' AND ""BatchId""= '{activity.BatchId}'";
-        log.LogInformation($"[ZipListener] Delete by query '{deleteQuery}'. Details {activity}");
+        string batchId = Path.GetFileNameWithoutExtension(blobClient.Name);
+        string deleteQuery = $@"""Status""='{BlobStatus.Zipped}' AND ""BatchId""= '{batchId}'";
+        log.LogInformation($"[ZipListener] Delete by query '{deleteQuery}', BatchId = {batchId}");
         await blobContainerClient.DeleteByQueryAsync(deleteQuery);
     } 
 }

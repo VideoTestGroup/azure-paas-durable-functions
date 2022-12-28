@@ -3,7 +3,8 @@ namespace ImageIngest.Functions;
 public class Collector
 {
     public static string AzureWebJobsFTPStorage { get; set; } = Environment.GetEnvironmentVariable("AzureWebJobsFTPStorage");
-    public static long ZipBatchSizeMB { get; set; } = long.TryParse(Environment.GetEnvironmentVariable("ZipBatchSizeMB"), out long size) ? size : 10485760;
+    public static long ZipBatchMinSizeMB { get; set; } = long.TryParse(Environment.GetEnvironmentVariable("ZipBatchMinSizeMB"), out long size) ? size : 10485760;
+    public static long ZipBatchMaxSizeMB { get; set; } = long.TryParse(Environment.GetEnvironmentVariable("ZipBatchMaxSizeMB"), out long size) ? size : 10485760 * 2;
 
     public static TimeSpan BlobOutdatedThreshold { get; set; } =
             TimeSpan.TryParse(Environment.GetEnvironmentVariable("BlobOutdatedThreshold"), out TimeSpan span) ? span : TimeSpan.FromMinutes(5);
@@ -28,11 +29,14 @@ public class Collector
             hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
             tags.Add(tag);
 
-            // TODO - Maybe limit size.
+            if (totalSize.Bytes2Megabytes() > ZipBatchMaxSizeMB)
+            {
+                break;
+            }
         }
 
-        log.LogInformation($"[Collector] found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
-        if (totalSize.Bytes2Megabytes() < ZipBatchSizeMB && !hasOutdateBlobs)
+        log.LogInformation($"[Collector] found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchMinSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+        if (totalSize.Bytes2Megabytes() < ZipBatchMinSizeMB && !hasOutdateBlobs)
         {
             return null;
         }
