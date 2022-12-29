@@ -20,6 +20,15 @@
     "P1Mapper": "94_001",
     "P2Mapper": "94_0038",
     "P3Mapper": "94_0038",
-    "P4Mapper": "94_0038"
+    "P4Mapper": "94_0038",
+    "TargetSources": [
+      {
+        "TargetName": "First",
+        "ConnectionString": "",
+        "ContainerName": "source",
+        "IsRoundRobin": true,
+        "ContainersCount": 10
+      }
+    ]
   }
 }
