@@ -19,8 +19,9 @@ public class ZipDistributorOrchestrator
         log.LogInformation($"[ZipDistributorOrchestrator] Triggered Function for zip: {blobName}, InstanceId {context.InstanceId}");
         var blobClient = new BlobClient(AzureWebJobsZipStorage, "zip", blobName);
         var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(5));
+        List<Task> tasks = new List<Task>();
 
-        await Task.WhenAll(DistributionTargets.Select(async distributionTarget =>
+        foreach (var distributionTarget in DistributionTargets)
         {
             log.LogInformation($"[ZipDistributorOrchestrator] Start distribution target - {distributionTarget.TargetName}");
             string containerName = distributionTarget.ContainerName;
@@ -28,29 +29,28 @@ public class ZipDistributorOrchestrator
                 distributionTarget.IsRoundRobin.Value &&
                 distributionTarget.ContainersCount.HasValue)
             {
+                log.LogInformation($"[ZipDistributorOrchestrator] Get container index for - {distributionTarget.TargetName}");
                 var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
                 using (await context.LockAsync(entityId))
                 {
                     int containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
                     containerName += containerNum.ToString();
                 }
+
+                log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for- {distributionTarget.TargetName} successfully");
             }
 
-            log.LogInformation($"[ZipDistributorOrchestrator] Start copy {blobClient.Name} to destination - {distributionTarget.TargetName}, containerName - {containerName}");
-            var destClient = new BlobClient(distributionTarget.ConnectionString, containerName, blobClient.Name);
-            var copyProcess = await destClient.StartCopyFromUriAsync(sourceBlobSasToken);
-            await copyProcess.WaitForCompletionAsync();
-
-            log.LogInformation($"[ZipDistributorOrchestrator] Finish copy {blobClient.Name} to destination - {distributionTarget.TargetName}");
-
-            var destProps = destClient.GetProperties().Value;
-            if (destProps.BlobCopyStatus != CopyStatus.Success)
+            log.LogInformation($"[ZipDistributorOrchestrator] Trigger CopyZipActivity for distribution target - {distributionTarget.TargetName}");
+            tasks.Add(context.CallActivityAsync(nameof(CopyZipActivity), new CopyZipRequest()
             {
-                log.LogError($"[ZipDistributorOrchestrator] Unsuccessfull copy {blobClient.Name} to destination - {distributionTarget.TargetName}, description: {destProps.CopyStatusDescription}");
-                // TODO - Log and mark the zip not successfull.
-            }
-        }));
+                BlobName = blobName,
+                ContainerName = containerName,
+                DistributionTarget = distributionTarget,
+                SourceBlobSasToken = sourceBlobSasToken
+            }));
+        }
 
+        await Task.WhenAll(tasks);
         // TODO - Delete zip if all successfull.
         // TODO - Handle errors
     }
