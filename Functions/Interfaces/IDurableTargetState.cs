@@ -4,6 +4,6 @@ public interface IDurableTargetState
 {
     int CurrentValue { get; set; }
     void Increment();
-    void ChangeValue(int maxSize);
     void Reset();
+    int GetNext(int maxSize);
 }

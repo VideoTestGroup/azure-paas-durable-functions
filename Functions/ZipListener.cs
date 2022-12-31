@@ -3,6 +3,7 @@ public class ZipListener
 {
     [FunctionName(nameof(ZipListener))]
     public async Task Run(
+        // TODO - Change to event trigger
         [BlobTrigger("zip/{name}.zip", Connection = "AzureWebJobsZipStorage")] BlobClient blobClient,
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         ILogger log)

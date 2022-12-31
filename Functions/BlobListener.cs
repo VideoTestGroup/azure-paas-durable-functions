@@ -29,6 +29,7 @@ public class BlobListener
 
         tags.Namespace = GetBlobNamespace(blobNameWithoutExt);     
 
+        // TODO - Fix bug in tags.
         Response response = await blobClient.WriteTagsAsync(tags);
         if (response.IsError)
         {

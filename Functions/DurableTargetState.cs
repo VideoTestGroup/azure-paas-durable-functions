@@ -10,7 +10,7 @@ public class DurableTargetState: IDurableTargetState
 
     public void Reset() => this.CurrentValue = 1;
 
-    public void ChangeValue(int maxSize)
+    public int GetNext(int maxSize)
     {
         int currentValue = this.CurrentValue;
         if (currentValue < maxSize)
@@ -21,6 +21,8 @@ public class DurableTargetState: IDurableTargetState
         {
             Reset();
         }
+
+        return currentValue;
     }
 
 
