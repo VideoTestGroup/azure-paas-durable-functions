@@ -19,44 +19,39 @@ public class ZipDistributorOrchestrator
         log.LogInformation($"[ZipDistributorOrchestrator] Triggered Function for zip: {blobName}, InstanceId {context.InstanceId}");
         var blobClient = new BlobClient(AzureWebJobsZipStorage, "zip", blobName);
         var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(5));
-        List<Task> tasks = new List<Task>();
 
-        foreach (var distributionTarget in DistributionTargets)
+        await Task.WhenAll(DistributionTargets.Select(async distributionTarget =>
         {
-            tasks.Add(Task.Run(async () =>
+            log.LogInformation($"[ZipDistributorOrchestrator] Start distribution target - {distributionTarget.TargetName}");
+            string containerName = distributionTarget.ContainerName;
+            if (distributionTarget.IsRoundRobin.HasValue &&
+                distributionTarget.IsRoundRobin.Value &&
+                distributionTarget.ContainersCount.HasValue)
             {
-                log.LogInformation($"[ZipDistributorOrchestrator] Start distribution target - {distributionTarget.TargetName}");
-                string containerName = distributionTarget.ContainerName;
-                if (distributionTarget.IsRoundRobin.HasValue &&
-                    distributionTarget.IsRoundRobin.Value &&
-                    distributionTarget.ContainersCount.HasValue)
+                var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
+                using (await context.LockAsync(entityId))
                 {
-                    var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
-                    using (await context.LockAsync(entityId))
-                    {
-                        IDurableTargetState entityProxy = context.CreateEntityProxy<IDurableTargetState>(entityId);
-                        var containerNum = entityProxy.GetNext(distributionTarget.ContainersCount.Value);
-                        containerName += containerNum.ToString();
-                    }
+                    IDurableTargetState entityProxy = context.CreateEntityProxy<IDurableTargetState>(entityId);
+                    var containerNum = entityProxy.GetNext(distributionTarget.ContainersCount.Value);
+                    containerName += containerNum.ToString();
                 }
+            }
 
-                log.LogInformation($"[ZipDistributorOrchestrator] Start copy {blobClient.Name} to destination - {distributionTarget.TargetName}, containerName - {containerName}");
-                var destClient = new BlobClient(distributionTarget.ConnectionString, containerName, blobClient.Name);
-                var copyProcess = await destClient.StartCopyFromUriAsync(sourceBlobSasToken);
-                await copyProcess.WaitForCompletionAsync();
+            log.LogInformation($"[ZipDistributorOrchestrator] Start copy {blobClient.Name} to destination - {distributionTarget.TargetName}, containerName - {containerName}");
+            var destClient = new BlobClient(distributionTarget.ConnectionString, containerName, blobClient.Name);
+            var copyProcess = await destClient.StartCopyFromUriAsync(sourceBlobSasToken);
+            await copyProcess.WaitForCompletionAsync();
 
-                log.LogInformation($"[ZipDistributorOrchestrator] Finish copy {blobClient.Name} to destination - {distributionTarget.TargetName}");
+            log.LogInformation($"[ZipDistributorOrchestrator] Finish copy {blobClient.Name} to destination - {distributionTarget.TargetName}");
 
-                var destProps = destClient.GetProperties().Value;
-                if (destProps.BlobCopyStatus != CopyStatus.Success)
-                {
-                    log.LogError($"[ZipDistributorOrchestrator] Unsuccessfull copy {blobClient.Name} to destination - {distributionTarget.TargetName}, description: {destProps.CopyStatusDescription}");
-                    // TODO - Log and mark the zip not successfull.
-                }
-            }));
-        }
+            var destProps = destClient.GetProperties().Value;
+            if (destProps.BlobCopyStatus != CopyStatus.Success)
+            {
+                log.LogError($"[ZipDistributorOrchestrator] Unsuccessfull copy {blobClient.Name} to destination - {distributionTarget.TargetName}, description: {destProps.CopyStatusDescription}");
+                // TODO - Log and mark the zip not successfull.
+            }
+        }));
 
-        await Task.WhenAll(tasks);
         // TODO - Delete zip if all successfull.
         // TODO - Handle errors
     }
