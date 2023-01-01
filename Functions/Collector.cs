@@ -12,7 +12,7 @@ public class Collector
     [FunctionName(nameof(Collector))]
     public static async Task<string> Run(
         [ActivityTrigger] string @namespace,
-        [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
+        [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
     {
 
@@ -43,6 +43,8 @@ public class Collector
 
         // Create batch id
         string batchId = ActivityAction.CreateBatchId(@namespace);
+
+        // Mark blobs as batched with batchId
         await Task.WhenAll(tags.Select(tag =>
             new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, null, t =>
             {

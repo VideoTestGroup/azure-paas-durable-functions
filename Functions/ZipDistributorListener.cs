@@ -10,7 +10,6 @@ public class ZipDistributorListener
     [FunctionName(nameof(ZipDistributorListener))]
     public async Task Run(
         [EventGridTrigger] EventGridEvent blobEvent,
-        [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient blobContainerClient,
         [DurableClient] IDurableOrchestrationClient starter,
         ILogger log)
     {

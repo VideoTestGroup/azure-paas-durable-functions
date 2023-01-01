@@ -9,7 +9,7 @@ public class Orchestrator
         log.LogInformation($"[Orchestrator] OrchestrationTrigger triggered Function from [BlobListener] for InstanceId {context.InstanceId}");
         string @namespace = context.GetInput<string>();
 
-        // //1. Get storage sas token    ++++++++++++++++++++++++++++++++++++++
+        // 1. Get storage sas token 
         // activity = await context.CallActivityAsync<ActivityAction>(nameof(Tokenizer), activity);
         // log.LogInformation($"[Orchestrator] ActivityAction with token {activity}");
 

@@ -17,10 +17,12 @@ public class ZipDistributorOrchestrator
     {
         string blobName = context.GetInput<string>();
         log.LogInformation($"[ZipDistributorOrchestrator] Triggered Function for zip: {blobName}, InstanceId {context.InstanceId}");
-        var blobClient = new BlobClient(AzureWebJobsZipStorage, "zip", blobName);
+        var blobClient = new BlobClient(AzureWebJobsZipStorage, Consts.ZipContainerName, blobName);
         var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(5));
+
         List<Task<bool>> tasks = new List<Task<bool>>();
 
+        // TODO - Handle errors is target that will not affect other targets.
         foreach (var distributionTarget in DistributionTargets)
         {
             log.LogInformation($"[ZipDistributorOrchestrator] Start distribution target - {distributionTarget.TargetName}");
@@ -37,7 +39,7 @@ public class ZipDistributorOrchestrator
                     containerName += containerNum.ToString();
                 }
 
-                log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for- {distributionTarget.TargetName} successfully");
+                log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for - {distributionTarget.TargetName} successfully. containerName: {containerName}");
             }
 
             log.LogInformation($"[ZipDistributorOrchestrator] Trigger CopyZipActivity for distribution target - {distributionTarget.TargetName}");

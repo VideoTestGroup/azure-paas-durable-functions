@@ -9,14 +9,15 @@ public static class Zipper
     [FunctionName(nameof(Zipper))]
     public static async Task<bool?> Run(
         [ActivityTrigger] ActivityAction activity,
-        [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient client,
-        [Blob("zip", Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
+        [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient ftpClient,
+        [Blob(Consts.ZipContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
         ILogger log)
     {
         log.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity}");
         log.LogInformation($"[Zipper] QueryAsync activity: {activity}");
         List<BatchJob> jobs = new List<BatchJob>();
-        await foreach (BlobTags tags in client.QueryAsync(t =>
+
+        await foreach (BlobTags tags in ftpClient.QueryAsync(t =>
             t.Status == BlobStatus.Batched &&
             t.BatchId == activity.BatchId &&
             t.Namespace == activity.Namespace))

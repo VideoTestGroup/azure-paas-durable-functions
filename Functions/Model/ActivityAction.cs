@@ -2,11 +2,6 @@ namespace ImageIngest.Functions.Model;
 
 public class ActivityAction
 {
-    // IMPORTANT: 
-    // When changing ContainerName make sure to change EventGrid's topic filter
-    // Subject Begins With: blobServices/default/containers/files
-    public const string ContainerName = "files";
-
     public string Namespace { get; set; } = "default";
     public string BatchId { get; set; }
 
