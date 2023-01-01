@@ -70,6 +70,7 @@ public static class Zipper
                 }
 
                 log.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
+                zipStream.Position = 0;
                 await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream);
                 log.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
             }
