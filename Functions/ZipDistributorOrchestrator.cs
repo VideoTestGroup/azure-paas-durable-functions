@@ -13,7 +13,6 @@ public class ZipDistributorOrchestrator
     [FunctionName(nameof(ZipDistributorOrchestrator))]
     public static async Task Run(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient ftpBlobContainerClient,
         ILogger log)
     {
         string blobName = context.GetInput<string>();
@@ -60,13 +59,7 @@ public class ZipDistributorOrchestrator
         else
         {
             log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} successfully copy to all destinations, start delete zip");
-            await blobClient.DeleteIfExistsAsync();
-            log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} deleted successfully");
-            string batchId = Path.GetFileNameWithoutExtension(blobName);
-            string deleteQuery = $@"""Status""='{BlobStatus.Zipped}' AND ""BatchId""= '{batchId}'";
-            log.LogInformation($"[ZipDistributorOrchestrator] Delete by query '{deleteQuery}', BatchId = {batchId}");
-            await ftpBlobContainerClient.DeleteByQueryAsync(deleteQuery);
-            log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} images deleted successfully");
+            await context.CallActivityAsync(nameof(ZipDeleteActivity), blobName);
         }
     }
 }

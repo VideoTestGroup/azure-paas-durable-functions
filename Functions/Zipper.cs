@@ -69,11 +69,8 @@ public static class Zipper
                     }
                 }
 
-                byte[] byteArray = zipStream.ToArray();
                 log.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
-                var blobStream = await zipClient.GetBlobClient($"{activity.BatchId}.zip").OpenWriteAsync(true);
-                await blobStream.WriteAsync(byteArray, 0, byteArray.Length);
-                await blobStream.DisposeAsync();
+                await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream);
                 log.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
             }
         }
