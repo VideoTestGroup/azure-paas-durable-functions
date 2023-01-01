@@ -1,19 +1,21 @@
-using Azure.Storage.Sas;
-using Microsoft.Azure.WebJobs.Extensions.DurableTask;
-using Newtonsoft.Json.Linq;
+using Azure.Messaging.EventGrid;
+using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 
 namespace ImageIngest.Functions;
 
 public class ZipDistributorListener
 {
+    public static string EventGridSubjectPrefix { get; set; } = Environment.GetEnvironmentVariable("ZipEventGridSubjectPrefix");
+
     [FunctionName(nameof(ZipDistributorListener))]
     public async Task Run(
-        // TODO - Change to event grid trigger.
-        [BlobTrigger("zip/{name}.zip", Connection = "AzureWebJobsZipStorage")] BlobClient blobClient,
+        [EventGridTrigger] EventGridEvent blobEvent,
+        [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient blobContainerClient,
         [DurableClient] IDurableOrchestrationClient starter,
         ILogger log)
     {
-        log.LogInformation($"[ZipDistributor] Function triggered on blob {blobClient.Name}");
-        await starter.StartNewAsync<string>(nameof(ZipDistributorOrchestrator), blobClient.Name);
+        string blobName = blobEvent.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+        log.LogInformation($"[ZipDistributor] Function triggered on blob {blobName}");
+        await starter.StartNewAsync<string>(nameof(ZipDistributorOrchestrator), blobName);
     } 
 }

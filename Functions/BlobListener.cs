@@ -6,13 +6,12 @@ namespace ImageIngest.Functions;
 
 public class BlobListener
 {
-    public static string EventGridSubjectPrefix { get; set; } = Environment.GetEnvironmentVariable("EventGridSubjectPrefix");
+    public static string EventGridSubjectPrefix { get; set; } = Environment.GetEnvironmentVariable("FTPEventGridSubjectPrefix");
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
         [EventGridTrigger] EventGridEvent blobEvent, 
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
-        [DurableClient] IDurableOrchestrationClient starter,
         ILogger log)
     {
         log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
@@ -37,7 +36,6 @@ public class BlobListener
         }
  
         log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
-        //await starter.StartNewAsync<string>(nameof(Orchestrator), tags.Namespace);
     }
 
     private static string GetBlobNamespace(string blobName)

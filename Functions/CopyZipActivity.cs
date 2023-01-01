@@ -6,7 +6,7 @@ namespace ImageIngest.Functions;
 public class CopyZipActivity
 {
     [FunctionName(nameof(CopyZipActivity))]
-    public static async Task Run(
+    public static async Task<bool> Run(
         [ActivityTrigger] CopyZipRequest request,
         ILogger log)
     {
@@ -20,7 +20,9 @@ public class CopyZipActivity
         if (destProps.BlobCopyStatus != CopyStatus.Success)
         {
             log.LogError($"[CopyZipActivity] Unsuccessfull copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, description: {destProps.CopyStatusDescription}");
-            // TODO - Log and mark the zip not successfull.
+            return false;
         }
+
+        return true;
     }
 }

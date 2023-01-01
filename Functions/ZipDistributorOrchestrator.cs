@@ -19,7 +19,7 @@ public class ZipDistributorOrchestrator
         log.LogInformation($"[ZipDistributorOrchestrator] Triggered Function for zip: {blobName}, InstanceId {context.InstanceId}");
         var blobClient = new BlobClient(AzureWebJobsZipStorage, "zip", blobName);
         var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(5));
-        List<Task> tasks = new List<Task>();
+        List<Task<bool>> tasks = new List<Task<bool>>();
 
         foreach (var distributionTarget in DistributionTargets)
         {
@@ -41,7 +41,7 @@ public class ZipDistributorOrchestrator
             }
 
             log.LogInformation($"[ZipDistributorOrchestrator] Trigger CopyZipActivity for distribution target - {distributionTarget.TargetName}");
-            tasks.Add(context.CallActivityAsync(nameof(CopyZipActivity), new CopyZipRequest()
+            tasks.Add(context.CallActivityAsync<bool>(nameof(CopyZipActivity), new CopyZipRequest()
             {
                 BlobName = blobName,
                 ContainerName = containerName,
@@ -50,8 +50,17 @@ public class ZipDistributorOrchestrator
             }));
         }
 
-        await Task.WhenAll(tasks);
-        // TODO - Delete zip if all successfull.
-        // TODO - Handle errors
+        var results = await Task.WhenAll(tasks);
+        if (results.Any(res => !res))
+        {
+            log.LogWarning($"[ZipDistributorOrchestrator] zip {blobName} not successfully copy to all destinations");
+            // TODO - Maybe mark the zip.
+        }
+        else
+        {
+            log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} successfully copy to all destinations, start delete zip");
+            await blobClient.DeleteIfExistsAsync();
+            log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} deleted successfully");
+        }
     }
 }
