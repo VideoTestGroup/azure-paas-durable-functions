@@ -54,7 +54,7 @@ public class ZipDistributorOrchestrator
         if (results.Any(res => !res))
         {
             log.LogWarning($"[ZipDistributorOrchestrator] zip {blobName} not successfully copy to all destinations");
-            // TODO - Maybe mark the zip.
+            // TODO - Maybe mark the zip as error or something.
         }
         else
         {

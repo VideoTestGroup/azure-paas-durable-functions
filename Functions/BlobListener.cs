@@ -14,28 +14,36 @@ public class BlobListener
         [Blob(ActivityAction.ContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         ILogger log)
     {
-        log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
-        string blobName = blobEvent.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
-        log.LogInformation($"[BlobListener] extacted blob name: {blobName}");
-        BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
-        log.LogInformation($"[BlobListener] BlobClient Blob: {blobClient.Name}, Container: {blobClient.BlobContainerName}, AccountName: {blobClient.AccountName}");
-        BlobProperties props = await blobClient.GetPropertiesAsync();
-        log.LogInformation($"[BlobListener] BlobProperties: {props}");
-        BlobTags tags = new BlobTags(props, blobClient);
-
-        string blobNameWithoutExt = Path.GetFileNameWithoutExtension(blobName);
-        log.LogInformation($"[BlobListener]: BlobNameWithoutExt: {blobNameWithoutExt}");
-
-        tags.Namespace = GetBlobNamespace(blobNameWithoutExt);     
-
-        // TODO - Fix bug in tags.
-        Response response = await blobClient.WriteTagsAsync(tags);
-        if (response.IsError)
+        try
         {
-            log.LogError(new EventId(1001), response.ToString());
+            log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
+            string blobName = blobEvent.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+            log.LogInformation($"[BlobListener] extacted blob name: {blobName}");
+            BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+            log.LogInformation($"[BlobListener] BlobClient Blob: {blobClient.Name}, Container: {blobClient.BlobContainerName}, AccountName: {blobClient.AccountName}");
+            BlobProperties props = await blobClient.GetPropertiesAsync();
+            log.LogInformation($"[BlobListener] BlobProperties: {props}");
+            BlobTags tags = new BlobTags(props, blobClient);
+
+            string blobNameWithoutExt = Path.GetFileNameWithoutExtension(blobName);
+            log.LogInformation($"[BlobListener]: BlobNameWithoutExt: {blobNameWithoutExt}");
+
+            tags.Namespace = GetBlobNamespace(blobNameWithoutExt);
+
+            // TODO - Fix bug in tags.
+            Response response = await blobClient.WriteTagsAsync(tags);
+            if (response.IsError)
+            {
+                log.LogError(new EventId(1001), response.ToString());
+            }
+
+            log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
         }
- 
-        log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
+        catch (Exception ex)
+        {
+            log.LogError(ex, "$[BlobListener] error handle blob {blobName}");
+            throw;
+        }
     }
 
     private static string GetBlobNamespace(string blobName)
