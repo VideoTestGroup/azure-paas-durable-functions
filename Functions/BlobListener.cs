@@ -41,7 +41,7 @@ public class BlobListener
         }
         catch (Exception ex)
         {
-            log.LogError(ex, "$[BlobListener] error handle blob {blobName}");
+            log.LogError(ex, $"[BlobListener] error handle blob subject: {blobEvent.Subject}, ex: {ex}");
             throw;
         }
     }
