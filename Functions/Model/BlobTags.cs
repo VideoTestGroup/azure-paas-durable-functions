@@ -1,6 +1,8 @@
 namespace ImageIngest.Functions.Model;
 public class BlobTags
 {
+    public string Name { get; set; }
+
     private IDictionary<string, string> tags = new Dictionary<string, string>();
     public IDictionary<string, string> Tags => tags;
 
@@ -20,12 +22,6 @@ public class BlobTags
     {
         get => (Enum.TryParse<BlobStatus>(tags[nameof(Status)], true, out BlobStatus status) ? status : BlobStatus.New);
         set => tags[nameof(Status)] = value.ToString();
-    }
-
-    public string Name
-    {
-        get => tags.GetValue<string>(nameof(Name));
-        set => tags[nameof(Name)] = value;
     }
 
     public string Container
@@ -63,7 +59,6 @@ public class BlobTags
         tags[nameof(Container)] = string.Empty;
         tags[nameof(Text)] = string.Empty;
         tags[nameof(Status)] = BlobStatus.Pending.ToString();
-        tags[nameof(Name)] = string.Empty;
         tags[nameof(BatchId)] = string.Empty;
         tags[nameof(Namespace)] = "default"; ;
         tags[nameof(Length)] = "0";
