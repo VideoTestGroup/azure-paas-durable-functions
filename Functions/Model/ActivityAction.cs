@@ -7,7 +7,7 @@ public class ActivityAction
 
     public static string CreateBatchId(string @namespace, int blobsCount)
     {
-        return $"{@namespace}_${blobsCount}_{DateTime.UtcNow.ToString("yyyyMMdd_HHmmssfff")}";
+        return $"{@namespace}_{blobsCount}_{DateTime.UtcNow.ToString("yyyyMMddHHmmssfff")}";
     }
 
     public override string ToString()
