@@ -93,7 +93,7 @@ public class BlobTags
     public BlobTags(TaggedBlobItem item)
     {
         Initialize();
-        item.Tags.ToList().ForEach(x => tags[x.Key] = x.Value);
+        item.Tags?.ToList()?.ForEach(x => tags[x.Key] = x.Value);
         Name = item.BlobName;
         Container = item.BlobContainerName;
     }

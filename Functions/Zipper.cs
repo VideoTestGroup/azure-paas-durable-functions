@@ -32,9 +32,7 @@ public static class Zipper
             return null;
         }
 
-        // TODO - Fix bug in lease
         // download file streams
-        //await Task.WhenAll(jobs.Select(job => job.LeaseClient.AcquireAsync(LeaseDuration).ContinueWith(j => job.Lease = j.Result, TaskContinuationOptions.ExecuteSynchronously)));
         await Task.WhenAll(jobs.Select(job => job.BlobClient.DownloadToAsync(job.Stream)
             .ContinueWith(r => log.LogInformation($"[Zipper] DownloadToAsync {job.BlobClient.Name}, length: {job.Stream.Length}, Success: {r.IsCompletedSuccessfully}, Exception: {r.Exception?.Message}"))
         ));
@@ -50,29 +48,49 @@ public static class Zipper
                 {
                     foreach (var job in jobs)
                     {
-                        currentJobName = job.Name;
-                        if (null == job.Stream)
+                        try
                         {
-                            log.LogError($"[Zipper] Package zip Cannot compress part, no stream created: {job}");
-                            job.Tags.Status = BlobStatus.Error;
-                            job.Tags.Text = "Zip failed, No stream downloaded";
-                            continue;
-                        }
-
-                        string destFilename = "/" + Path.GetFileName(job.Name);
-                        Uri uri = PackUriHelper.CreatePartUri(new Uri(destFilename, UriKind.Relative));
-                        PackagePart part = zip.CreatePart(uri, "", CompressionOption.NotCompressed);
-                        using (Stream dest = part.GetStream())
+                            currentJobName = job.Name;
+                            if (null == job.Stream)
                             {
-                                job.Stream.Position = 0;
-                                job.Stream.CopyTo(dest);
+                                log.LogError($"[Zipper] Package zip Cannot compress part, no stream created: {job}");
+                                job.Tags.Status = BlobStatus.Error;
+                                job.Tags.Text = "Zip failed, No stream downloaded";
+                                continue;
                             }
+
+                            string destFilename = "/" + Path.GetFileName(job.Name);
+                            Uri uri = PackUriHelper.CreatePartUri(new Uri(destFilename, UriKind.Relative));
+                            PackagePart part = zip.CreatePart(uri, "", CompressionOption.NotCompressed);
+                            using (Stream dest = part.GetStream())
+                                {
+                                    job.Stream.Position = 0;
+                                    job.Stream.CopyTo(dest);
+                                }
+                        }
+                        catch (Exception ex)
+                        {
+                            log.LogError(ex, $"[Zipper] Error in job {currentJobName}, ActivityDetails: {activity}, exception: {ex.Message}");
+                            job.Tags.Status = BlobStatus.Error;
+                            job.Tags.Text = "Exception in create blob part in zip";
+                        }
                     }
                 }
 
                 log.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
                 zipStream.Position = 0;
-                await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream);
+                var zipBlobClient = zipClient.GetBlobClient($"{activity.BatchId}.zip");
+                var isExist = await zipBlobClient.ExistsAsync();
+
+                // Sometimes azure trigger the same batchId (right now dont know why).
+                // So we check if the blob is already exists, if true we ignore this execution with the batchId.
+                if (isExist)
+                {
+                    log.LogWarning($"[Zipper] Zip with batchId {activity.BatchId} already exists. ignoring this execution, ActivityDetails: {activity}");
+                    return null;
+                }
+
+                await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream) ;
                 log.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
             }
         }
@@ -80,19 +98,11 @@ public static class Zipper
         {
             isZippedSuccessfull = false;
             log.LogError(ex, $"{ex.Message} ActivityDetails: {activity}");
-            var job = jobs.FirstOrDefault(j => j.Name == currentJobName);
-            if (null != job)
-            {
-                job.Tags.Status = BlobStatus.Error;
-                job.Tags.Text = ex.Message;
-            }
         }
 
-        log.LogInformation($"[Zipper] Zip file completed, post creation marking blobs for deletion. Activity: {activity}");
+        log.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Activity: {activity}");
         await Task.WhenAll(jobs.Select(job => job.BlobClient
-            .WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)));
-
-            //.ContinueWith(t => job.LeaseClient.ReleaseAsync())));
+            .WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull && t.Status != BlobStatus.Error ? BlobStatus.Zipped : BlobStatus.Error)));
 
         log.LogInformation($"[Zipper] Tags marked {jobs.Count} blobs. Status: {(isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)}, Activity: {activity}. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
         return isZippedSuccessfull;

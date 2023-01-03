@@ -10,8 +10,6 @@ public class BatchJob
     private readonly Lazy<MemoryStream> stream;
     public string Name => Tags.Name;
     public BlobClient BlobClient => blobClient.Value;
-    //public BlobLeaseClient LeaseClient => leaseClient.Value;
-    //public BlobLease Lease { get; set; }
     public Stream Stream => stream.Value;
     public BlobTags Tags { get; set; }
 
@@ -19,13 +17,9 @@ public class BatchJob
     {
         Tags = tags;
         blobClient = new Lazy<BlobClient>(() => new BlobClient(AzureWebJobsFTPStorage, Tags.Container, Tags.Name));
-        //leaseClient = new Lazy<BlobLeaseClient>(() => BlobClient.GetBlobLeaseClient());
         stream = new Lazy<MemoryStream>(() => new MemoryStream());
     }
 
-
     public override string ToString() =>
         $"Name: {Name}, Length: {Stream.Length} Tags: {Tags}";
-
-    // LeaseId: {Lease.LeaseId}, LastModified: {Lease.LastModified},LeaseId: {Lease.LeaseTime},LeaseId: {Lease.ETag},
 }
