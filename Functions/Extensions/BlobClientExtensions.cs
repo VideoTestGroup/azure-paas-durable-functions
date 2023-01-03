@@ -12,23 +12,40 @@ public static class BlobClientExtensions
         }
     }
 
-     ////TODO: use tag indexing FindBlobsByTagsAsync
-     //public static async IAsyncEnumerable<BlobTags> QueryAsync(this BlobContainerClient client, string query)
-     //{
-     //    //List<BlobTags> tags = new List<BlobTags>();
-     //    await foreach (var page in client.FindBlobsByTagsAsync(query).AsPages())
-     //    {
-     //        foreach (var blob in page.Values)
-     //        {
-     //            yield return new BlobTags(blob);
-     //        }
-     //    }
-     //}
+    public static async IAsyncEnumerable<BlobTags> QueryByTagsAsync(this BlobContainerClient client, string query)
+    {
+        await foreach (var blob in client.FindBlobsByTagsAsync(query))
+        {
+            yield return new BlobTags(blob);
+        }
+    }
 
-    public static async Task DeleteByQueryAsync(this BlobContainerClient client, string query)
+    public static async Task DeleteByTagsAsync(this BlobContainerClient client, string query)
     {
         await foreach (TaggedBlobItem taggedBlobItem in client.FindBlobsByTagsAsync(query))
             await client.DeleteBlobIfExistsAsync(taggedBlobItem.BlobName);
+    }
+
+    public static string BuildTagsQuery(BlobStatus? status = null, string @namespace = null, string batchId = null)
+    {
+        var queries = new List<string>();
+
+        if (status.HasValue)
+        {
+            queries.Add($@"""{nameof(BlobTags.Status)}""='{status.Value}'");
+        }
+
+        if (!string.IsNullOrEmpty(@namespace))
+        {
+            queries.Add($@"""{nameof(BlobTags.Namespace)}""='{@namespace}'");
+        }
+
+        if (!string.IsNullOrEmpty(batchId))
+        {
+            queries.Add($@"""{nameof(BlobTags.BatchId)}""='{batchId}'");
+        }
+
+        return string.Join("AND", queries);
     }
 
     public static async IAsyncEnumerable<BlobTags> ReadTagsAsync(this BlobClient blobClient)

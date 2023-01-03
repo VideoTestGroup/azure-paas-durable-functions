@@ -22,7 +22,7 @@ public class Collector
 
         log.LogInformation($"[Collector] ActivityTrigger triggered Function namespace: {@namespace}");
 
-        await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Pending && t.Namespace == @namespace))
+        await foreach (BlobTags tag in containerClient.QueryByTagsAsync(BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Pending, @namespace: @namespace)))
         {
             log.LogInformation($"[Collector] found relevant blob {tag.Name}");
             totalSize += tag.Length;

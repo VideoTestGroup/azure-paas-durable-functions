@@ -17,9 +17,9 @@ public class ZipDeleteActivity
         await blobClient.DeleteIfExistsAsync();
         log.LogInformation($"[ZipDeleteActivity] zip {blobName} deleted successfully");
         string batchId = Path.GetFileNameWithoutExtension(blobName);
-        string deleteQuery = $@"""Status""='{BlobStatus.Zipped}' AND ""BatchId""= '{batchId}'";
+        string deleteQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Zipped, batchId: batchId);
         log.LogInformation($"[ZipDeleteActivity] Delete by query '{deleteQuery}', BatchId = {batchId}");
-        await ftpBlobContainerClient.DeleteByQueryAsync(deleteQuery);
+        await ftpBlobContainerClient.DeleteByTagsAsync(deleteQuery);
         log.LogInformation($"[ZipDeleteActivity] zip {blobName} blobs deleted successfully");
     }
 }
