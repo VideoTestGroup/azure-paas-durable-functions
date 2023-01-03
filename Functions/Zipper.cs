@@ -17,11 +17,10 @@ public static class Zipper
         log.LogInformation($"[Zipper] QueryAsync activity: {activity}");
         List<BatchJob> jobs = new List<BatchJob>();
 
-        await foreach (BlobTags tags in ftpClient.QueryByTagsAsync(BlobClientExtensions.BuildTagsQuery(
-            status: BlobStatus.Batched,
-            @namespace: activity.Namespace,
-            batchId: activity.BatchId
-        )))
+        await foreach (BlobTags tags in ftpClient.QueryAsync(t =>
+            t.Status == BlobStatus.Batched &&
+            t.BatchId == activity.BatchId &&
+            t.Namespace == activity.Namespace))
         {
             BatchJob job = new BatchJob(tags);
             jobs.Add(job);
