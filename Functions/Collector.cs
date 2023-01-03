@@ -24,7 +24,7 @@ public class Collector
 
         await foreach (BlobTags tag in containerClient.QueryByTagsAsync(BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Pending, @namespace: @namespace)))
         {
-            log.LogInformation($"[Collector] found relevant blob {tag.Name}");
+            log.LogInformation($"[Collector] found relevant blob {tag}");
             totalSize += tag.Length;
             hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
             tags.Add(tag);

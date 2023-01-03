@@ -99,5 +99,5 @@ public class BlobTags
     }
 
     public override string ToString() =>
-        $"Status: {Status}, Length: {Length}, Namespace: {Namespace}, BatchId: {BatchId}, Created: {Created}, Modified: {Modified}";
+        $"Name: {Name}, Status: {Status}, Length: {Length}, Namespace: {Namespace}, BatchId: {BatchId}, Created: {Created}, Modified: {Modified}";
 }
