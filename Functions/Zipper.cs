@@ -34,8 +34,8 @@ public static class Zipper
 
         // TODO - Fix bug in lease
         // download file streams
-        await Task.WhenAll(jobs.Select(job => job.LeaseClient.AcquireAsync(LeaseDuration).ContinueWith(j => job.Lease = j.Result, TaskContinuationOptions.ExecuteSynchronously)));
-        await Task.WhenAll(jobs.Select(job => job.BlobClient.DownloadToAsync(job.Stream, new BlobDownloadToOptions { Conditions = new BlobRequestConditions { LeaseId = job.Lease.LeaseId } })
+        //await Task.WhenAll(jobs.Select(job => job.LeaseClient.AcquireAsync(LeaseDuration).ContinueWith(j => job.Lease = j.Result, TaskContinuationOptions.ExecuteSynchronously)));
+        await Task.WhenAll(jobs.Select(job => job.BlobClient.DownloadToAsync(job.Stream)
             .ContinueWith(r => log.LogInformation($"[Zipper] DownloadToAsync {job.BlobClient.Name}, length: {job.Stream.Length}, Success: {r.IsCompletedSuccessfully}, Exception: {r.Exception?.Message}"))
         ));
 
@@ -90,8 +90,9 @@ public static class Zipper
 
         log.LogInformation($"[Zipper] Zip file completed, post creation marking blobs for deletion. Activity: {activity}");
         await Task.WhenAll(jobs.Select(job => job.BlobClient
-            .WriteTagsAsync(job.Tags, job.Lease.LeaseId, t => t.Status = isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)
-            .ContinueWith(t => job.LeaseClient.ReleaseAsync())));
+            .WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)));
+
+            //.ContinueWith(t => job.LeaseClient.ReleaseAsync())));
 
         log.LogInformation($"[Zipper] Tags marked {jobs.Count} blobs. Status: {(isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)}, Activity: {activity}. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
         return isZippedSuccessfull;

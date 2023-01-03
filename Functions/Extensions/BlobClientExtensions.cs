@@ -48,9 +48,9 @@ public static class BlobClientExtensions
         return await blobClient.SetTagsAsync(tags.Tags, string.IsNullOrWhiteSpace(leaseId) ? null : new BlobRequestConditions { LeaseId = leaseId });
     }
 
-    public static async Task<Response> WriteTagsAsync(this BlobClient blobClient, BlobTags tags, string leaseId, Action<BlobTags> update)
+    public static async Task<Response> WriteTagsAsync(this BlobClient blobClient, BlobTags tags, Action<BlobTags> update, string leaseId = null)
     {
         update(tags);
-        return await BlobClientExtensions.WriteTagsAsync(blobClient, tags, leaseId);
+        return await WriteTagsAsync(blobClient, tags, leaseId);
     }
 }

@@ -5,27 +5,9 @@ public class ActivityAction
     public string Namespace { get; set; } = "default";
     public string BatchId { get; set; }
 
-    public static string CreateBatchId(string @namespace)
+    public static string CreateBatchId(string @namespace, int blobsCount)
     {
-        // TODO - Check if the zip format name is ok like that.
-        return $"{@namespace}_{DateTime.UtcNow.ToString("yyyyMMddHHmmssfff")}";
-    }
-
-    public static ActivityAction ExtractBatchIdAndNamespace(string batchZipFilename)
-    {
-        int idx = batchZipFilename.LastIndexOf('_');
-
-        if (idx < 0)
-            throw new ArgumentException($"batchZipFilename does not contains Namespace, looking for last delimiter '_'", "batchZipFilename");
-
-        string batchId = Path.GetFileNameWithoutExtension(batchZipFilename);
-        ActivityAction activity = new ActivityAction
-        {
-            BatchId = batchId,
-            Namespace = batchId[..idx]
-        };
-
-        return activity;
+        return $"{@namespace}_${blobsCount}_{DateTime.UtcNow.ToString("yyyyMMdd_HHmmssfff")}";
     }
 
     public override string ToString()

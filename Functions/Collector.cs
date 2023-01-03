@@ -42,11 +42,11 @@ public class Collector
         }
 
         // Create batch id
-        string batchId = ActivityAction.CreateBatchId(@namespace);
+        string batchId = ActivityAction.CreateBatchId(@namespace, tags.Count);
 
         // Mark blobs as batched with batchId
         await Task.WhenAll(tags.Select(tag =>
-            new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, null, t =>
+            new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, t =>
             {
                 t.Status = BlobStatus.Batched;
                 t.BatchId = batchId;
