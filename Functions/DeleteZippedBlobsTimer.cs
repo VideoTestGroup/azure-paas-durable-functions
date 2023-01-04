@@ -11,7 +11,7 @@ public class DeleteZippedBlobsTimer
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         ILogger log)
     {
-        log.LogInformation($"[DeleteZippedBlobsTimer] start delete zipped blobs");
+        log.LogInformation($"[DeleteZippedBlobsTimer] Start delete zipped blobs at: {DateTime.Now}");
         string deleteQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Zipped, modifiedTime: DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc());
         log.LogInformation($"[DeleteZippedBlobsTimer] Delete by query '{deleteQuery}'");
         long deleteCount = await blobContainerClient.DeleteByTagsAsync(deleteQuery);
