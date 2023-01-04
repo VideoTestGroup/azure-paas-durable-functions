@@ -22,7 +22,6 @@ public class ZipDistributorOrchestrator
 
         List<Task<bool>> tasks = new List<Task<bool>>();
 
-        // TODO - Handle errors is target that will not affect other targets.
         foreach (var distributionTarget in DistributionTargets)
         {
             log.LogInformation($"[ZipDistributorOrchestrator] Start distribution target - {distributionTarget.TargetName}");

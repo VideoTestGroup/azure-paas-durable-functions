@@ -20,13 +20,19 @@ public static class BlobClientExtensions
         }
     }
 
-    public static async Task DeleteByTagsAsync(this BlobContainerClient client, string query)
+    public static async Task<long> DeleteByTagsAsync(this BlobContainerClient client, string query)
     {
+        long deletedCount = 0;
         await foreach (TaggedBlobItem taggedBlobItem in client.FindBlobsByTagsAsync(query))
+        {
             await client.DeleteBlobIfExistsAsync(taggedBlobItem.BlobName);
+            deletedCount++;
+        }
+
+        return deletedCount;
     }
 
-    public static string BuildTagsQuery(BlobStatus? status = null, string @namespace = null, string batchId = null)
+    public static string BuildTagsQuery(BlobStatus? status = null, string @namespace = null, string batchId = null, long? modifiedTime = null)
     {
         var queries = new List<string>();
 
@@ -45,7 +51,12 @@ public static class BlobClientExtensions
             queries.Add($@"""{nameof(BlobTags.BatchId)}""='{batchId}'");
         }
 
-        return string.Join("AND", queries);
+        if (modifiedTime.HasValue)
+        {
+            queries.Add($@"""{nameof(BlobTags.Modified)}""&lt;'{modifiedTime}'");
+        }
+
+        return string.Join(" AND ", queries);
     }
 
     public static async IAsyncEnumerable<BlobTags> ReadTagsAsync(this BlobClient blobClient)

@@ -11,6 +11,7 @@
     "ZipBatchMaxSizeMB": 20,
     "ScavengerPageSize": 20,
     "ScavengerTimer": 5,
+    "BlobsDeleteTimer": 10,
     "BlobOutdatedThreshold": "05:00",
     "LeaseDuration": "00:00:30",
     "FTPEventGridSubjectPrefix": "/blobServices/default/containers/files/blobs/",
