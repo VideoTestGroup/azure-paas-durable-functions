@@ -17,6 +17,7 @@ public class ZipDistributorOrchestrator
     {
         string blobName = context.GetInput<string>();
         log.LogInformation($"[ZipDistributorOrchestrator] Triggered Function for zip: {blobName}, InstanceId {context.InstanceId}");
+
         var blobClient = new BlobClient(AzureWebJobsZipStorage, Consts.ZipContainerName, blobName);
         var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(5));
 

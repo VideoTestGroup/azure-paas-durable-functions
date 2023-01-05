@@ -13,13 +13,19 @@ public class ZipDeleteActivity
         ILogger log)
     {
         log.LogInformation($"[ZipDeleteActivity] start delete zip {blobName}");
+
         var blobClient = zipBlobContainerClient.GetBlobClient(blobName);
         await blobClient.DeleteIfExistsAsync();
+
         log.LogInformation($"[ZipDeleteActivity] zip {blobName} deleted successfully");
+
         string batchId = Path.GetFileNameWithoutExtension(blobName);
         string deleteQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Zipped, batchId: batchId);
+
         log.LogInformation($"[ZipDeleteActivity] Delete by query '{deleteQuery}', BatchId = {batchId}");
+
         await ftpBlobContainerClient.DeleteByTagsAsync(deleteQuery);
+
         log.LogInformation($"[ZipDeleteActivity] zip {blobName} blobs deleted successfully");
     }
 }
