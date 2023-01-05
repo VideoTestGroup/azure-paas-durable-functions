@@ -1,11 +1,11 @@
 ﻿namespace ImageIngest.Functions;
 
-public class DeleteZippedBlobsTimer
+public class BlobsCleaner
 {
     public static TimeSpan BlobOutdatedThreshold { get; set; } =
             TimeSpan.TryParse(Environment.GetEnvironmentVariable("BlobOutdatedThreshold"), out TimeSpan span) ? span : TimeSpan.FromMinutes(5);
 
-    [FunctionName(nameof(DeleteZippedBlobsTimer))]
+    [FunctionName(nameof(BlobsCleaner))]
     public async Task Run(
         [TimerTrigger("0 */%BlobsDeleteTimer% * * * *")] TimerInfo myTimer,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
