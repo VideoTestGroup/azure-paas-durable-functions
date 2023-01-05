@@ -53,7 +53,7 @@ public static class BlobClientExtensions
 
         if (modifiedTime.HasValue)
         {
-            queries.Add($@"""{nameof(BlobTags.Modified)}""&lt;'{modifiedTime}'");
+            queries.Add($@"""{nameof(BlobTags.Modified)}""<'{modifiedTime}'");
         }
 
         return string.Join(" AND ", queries);
