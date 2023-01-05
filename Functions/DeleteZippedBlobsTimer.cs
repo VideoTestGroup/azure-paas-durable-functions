@@ -7,7 +7,7 @@ public class DeleteZippedBlobsTimer
 
     [FunctionName(nameof(DeleteZippedBlobsTimer))]
     public async Task Run(
-        [TimerTrigger("* */%BlobsDeleteTimer% * * * *")] TimerInfo myTimer,
+        [TimerTrigger("0 */%BlobsDeleteTimer% * * * *")] TimerInfo myTimer,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         ILogger log)
     {
