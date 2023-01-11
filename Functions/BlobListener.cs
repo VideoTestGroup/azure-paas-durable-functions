@@ -19,6 +19,21 @@ public class BlobListener
         log.LogInformation($"[BlobListener] extacted blob name: {blobName}");
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
         log.LogInformation($"[BlobListener] BlobClient Blob: {blobClient.Name}, Container: {blobClient.BlobContainerName}, AccountName: {blobClient.AccountName}");
+
+        try
+        {
+            var isBlobExist = await blobClient.ExistsAsync();
+            if (!isBlobExist.Value)
+            {
+                log.LogWarning($"[BlobListener] blob: {blobClient.Name} is not exist so ignore the trigger");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, $"[BlobListener] Error check blob: {blobClient.Name} ExistsAsync");
+        }
+
         BlobProperties props = await blobClient.GetPropertiesAsync();
         BlobTags tags = new BlobTags(props, blobClient);
 

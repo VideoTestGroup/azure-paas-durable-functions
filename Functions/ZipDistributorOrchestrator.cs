@@ -19,9 +19,9 @@ public class ZipDistributorOrchestrator
         log.LogInformation($"[ZipDistributorOrchestrator] Triggered Function for zip: {blobName}, InstanceId {context.InstanceId}");
 
         var blobClient = new BlobClient(AzureWebJobsZipStorage, Consts.ZipContainerName, blobName);
-        var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(5));
+        var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(10));
 
-        List<Task<bool>> tasks = new List<Task<bool>>();
+        List<Task<CopyZipResponse>> tasks = new List<Task<CopyZipResponse>>();
 
         foreach (var distributionTarget in DistributionTargets)
         {
@@ -43,7 +43,7 @@ public class ZipDistributorOrchestrator
             }
 
             log.LogInformation($"[ZipDistributorOrchestrator] Trigger CopyZipActivity for distribution target - {distributionTarget.TargetName}");
-            tasks.Add(context.CallActivityAsync<bool>(nameof(CopyZipActivity), new CopyZipRequest()
+            tasks.Add(context.CallActivityAsync<CopyZipResponse>(nameof(CopyZipActivity), new CopyZipRequest()
             {
                 BlobName = blobName,
                 ContainerName = containerName,
@@ -53,15 +53,19 @@ public class ZipDistributorOrchestrator
         }
 
         var results = await Task.WhenAll(tasks);
-        if (results.Any(res => !res))
+        if (results.Any(res => !res.IsSuccessfull))
         {
-            log.LogWarning($"[ZipDistributorOrchestrator] zip {blobName} not successfully copy to all destinations");
-            // TODO - Maybe mark the zip as error or something.
+            string failedTargets = string.Join(", ", results.Where(res => !res.IsSuccessfull).Select(res => res.TargetName));
+            log.LogWarning($"[ZipDistributorOrchestrator] zip {blobName} not successfully copy to all destinations, failed in {failedTargets}");
+            await context.CallActivityAsync(nameof(ZipFailedActivity), new ZipFailedParams() { BlobName = blobName, FailedTargets = failedTargets } );
         }
         else
         {
-            log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} successfully copy to all destinations, start delete zip");
-            await context.CallActivityAsync(nameof(ZipDeleteActivity), blobName);
+            log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} successfully copy to all destinations");
         }
+
+        log.LogInformation($"[ZipDistributorOrchestrator] start delete zip {blobName}");
+        await context.CallActivityAsync(nameof(ZipDeleteActivity), blobName);
+        log.LogInformation($"[ZipDistributorOrchestrator] finish delete zip {blobName}");
     }
 }

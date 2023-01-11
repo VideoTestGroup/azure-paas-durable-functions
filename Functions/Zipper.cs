@@ -1,4 +1,5 @@
-﻿using System.IO.Packaging;
+﻿using Azure.Storage.Blobs;
+using System.IO.Packaging;
 
 namespace ImageIngest.Functions;
 public static class Zipper
@@ -80,17 +81,25 @@ public static class Zipper
                 log.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
                 zipStream.Position = 0;
                 var zipBlobClient = zipClient.GetBlobClient($"{activity.BatchId}.zip");
-                var isExist = await zipBlobClient.ExistsAsync();
 
-                // Sometimes azure trigger the same batchId (right now dont know why).
-                // So we check if the blob is already exists, if true we ignore this execution with the batchId.
-                if (isExist)
+                try
                 {
-                    log.LogWarning($"[Zipper] Zip with batchId {activity.BatchId} already exists. ignoring this execution, ActivityDetails: {activity}");
-                    return null;
+                    var isExist = await zipBlobClient.ExistsAsync();
+
+                    // Sometimes azure trigger the same batchId (right now dont know why).
+                    // So we check if the blob is already exists, if true we ignore this execution with the batchId.
+                    if (isExist.Value)
+                    {
+                        log.LogWarning($"[Zipper] Zip with batchId {activity.BatchId} already exists. ignoring this execution, ActivityDetails: {activity}");
+                        return null;
+                    }
+                }
+                catch (Exception ex )
+                {
+                    log.LogError(ex, $"[Zipper] Error check zip: {activity.BatchId} ExistsAsync");
                 }
 
-                await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream) ;
+                await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream);
                 log.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
             }
         }

@@ -17,11 +17,11 @@
     "ZipEventGridSubjectPrefix": "/blobServices/default/containers/zip/blobs/",
     "SasDuration": "00:01:30",
     "DefaultBlobType": "P1",
-    "Namespaces": "94_001,94_0038",
-    "P1Mapper": "94_001",
-    "P2Mapper": "94_0038",
-    "P3Mapper": "94_0038",
-    "P4Mapper": "94_0038",
+    "Namespaces": "944_001,944_038",
+    "P1Mapper": "944_001",
+    "P2Mapper": "944_038",
+    "P3Mapper": "944_038",
+    "P4Mapper": "944_038",
     "DistributionTargets": []
   }
 }

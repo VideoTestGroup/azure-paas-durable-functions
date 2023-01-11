@@ -6,12 +6,14 @@ namespace ImageIngest.Functions;
 public class CopyZipActivity
 {
     [FunctionName(nameof(CopyZipActivity))]
-    public static async Task<bool> Run(
+    public static async Task<CopyZipResponse> Run(
         [ActivityTrigger] CopyZipRequest request,
         ILogger log)
     {
         log.LogInformation($"[CopyZipActivity] Start copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, containerName - {request.ContainerName}");
         var destClient = new BlobClient(request.DistributionTarget.ConnectionString, request.ContainerName, request.BlobName);
+        var response = new CopyZipResponse() { TargetName = request.DistributionTarget.TargetName };
+
         try
         {
             var copyProcess = await destClient.StartCopyFromUriAsync(request.SourceBlobSasToken);
@@ -20,7 +22,8 @@ public class CopyZipActivity
         catch (Exception ex)
         {
             log.LogError(ex, $"[CopyZipActivity] Error in copy zip {request.BlobName} to destination {request.DistributionTarget.TargetName}, containerName - {request.ContainerName}. exMessage: {ex.Message}");
-            return false;
+            response.IsSuccessfull = false;
+            return response;
         }
 
         log.LogInformation($"[CopyZipActivity] Finish copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}");
@@ -28,9 +31,11 @@ public class CopyZipActivity
         if (destProps.BlobCopyStatus != CopyStatus.Success)
         {
             log.LogError($"[CopyZipActivity] Unsuccessfull copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, description: {destProps.CopyStatusDescription}");
-            return false;
+            response.IsSuccessfull = false;
+            return response;
         }
 
-        return true;
+        response.IsSuccessfull = true;
+        return response;
     }
 }
