@@ -30,46 +30,53 @@ public class Collector
 
         log.LogInformation($"[Collector {@namespace}] start run for namespace: {@namespace}");
 
-        await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Pending && t.Namespace == @namespace))
+        try
         {
-            log.LogInformation($"[Collector {@namespace}] found relevant blob {tag.Name}");
-            totalSize += tag.Length;
-            hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
-            tags.Add(tag);
-
-            if (totalSize.Bytes2Megabytes() > ZipBatchMaxSizeMB)
+            await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Pending && t.Namespace == @namespace))
             {
-                break;
+                log.LogInformation($"[Collector {@namespace}] found relevant blob {tag.Name}");
+                totalSize += tag.Length;
+                hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
+                tags.Add(tag);
+
+                if (totalSize.Bytes2Megabytes() > ZipBatchMaxSizeMB)
+                {
+                    break;
+                }
             }
-        }
 
-        log.LogInformation($"[Collector {@namespace}] found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchMinSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
-        if (totalSize.Bytes2Megabytes() < ZipBatchMinSizeMB && !hasOutdateBlobs)
-        {
-            return;
-        }
-
-        // Create batch id
-        string batchId = ActivityAction.CreateBatchId(@namespace, tags.Count);
-
-        // Mark blobs as batched with batchId
-        await Task.WhenAll(tags.Select(tag =>
-            new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, t =>
+            log.LogInformation($"[Collector {@namespace}] found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchMinSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+            if (totalSize.Bytes2Megabytes() < ZipBatchMinSizeMB && !hasOutdateBlobs)
             {
-                t.Status = BlobStatus.Batched;
-                t.BatchId = batchId;
-            })
-        ));
+                return;
+            }
 
-        log.LogInformation($"[Collector {@namespace}] Tags marked {tags.Count} blobs.\n BatchId: {batchId} \n TotalSize: {totalSize}.\nFiles: {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+            // Create batch id
+            string batchId = ActivityAction.CreateBatchId(@namespace, tags.Count);
 
-        var activity = new ActivityAction() { Namespace = @namespace, BatchId = batchId };
+            // Mark blobs as batched with batchId
+            await Task.WhenAll(tags.Select(tag =>
+                new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, t =>
+                {
+                    t.Status = BlobStatus.Batched;
+                    t.BatchId = batchId;
+                })
+            ));
 
-        log.LogInformation($"[Collector {@namespace}] trigger ZipperOrchestrator with activity {activity}");
-        await starter.StartNewAsync(nameof(ZipperOrchestrator), activity).ContinueWith((res) =>
+            log.LogInformation($"[Collector {@namespace}] Tags marked {tags.Count} blobs.\n BatchId: {batchId} \n TotalSize: {totalSize}.\nFiles: {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+
+            var activity = new ActivityAction() { Namespace = @namespace, BatchId = batchId };
+
+            log.LogInformation($"[Collector {@namespace}] trigger ZipperOrchestrator with activity {activity}");
+            await starter.StartNewAsync(nameof(ZipperOrchestrator), activity).ContinueWith((res) =>
+            {
+                log.LogInformation($"[Collector {@namespace}] finish trigger ZipperOrchestrator with activity {activity}");
+            });
+        }
+        catch (Exception ex)
         {
-            log.LogInformation($"[Collector {@namespace}] finish trigger ZipperOrchestrator with activity {activity}");
-        });
+            log.LogError(ex, $"[Collector {@namespace}] failed, exMessage: {ex.Message}");
+        }
 
         log.LogInformation($"[Collector {@namespace}] finish run for namespace: {@namespace}");
     }
