@@ -1,5 +1,4 @@
-﻿using Azure.Storage.Blobs;
-using System.IO.Packaging;
+﻿using Ionic.Zip;
 
 namespace ImageIngest.Functions;
 public static class Zipper
@@ -40,19 +39,17 @@ public static class Zipper
 
         bool isZippedSuccessfull = true;
         log.LogInformation($"[Zipper] Downloaded {jobs.Count} blobs. Files: {string.Join(",", jobs.Select(j => $"{j.Name} ({j.Stream.Length})"))}");
-        string currentJobName = string.Empty;
         try
         {
             using (MemoryStream zipStream = new MemoryStream())
             {
-                using (Package zip = Package.Open(zipStream, FileMode.CreateNew))
+                using (ZipFile zip = new ZipFile())
                 {
                     foreach (var job in jobs)
                     {
                         try
                         {
-                            currentJobName = job.Name;
-                            if (null == job.Stream)
+                            if (job.Stream == null)
                             {
                                 log.LogError($"[Zipper] Package zip Cannot compress part, no stream created: {job}");
                                 job.Tags.Status = BlobStatus.Error;
@@ -60,22 +57,18 @@ public static class Zipper
                                 continue;
                             }
 
-                            string destFilename = "/" + Path.GetFileName(job.Name);
-                            Uri uri = PackUriHelper.CreatePartUri(new Uri(destFilename, UriKind.Relative));
-                            PackagePart part = zip.CreatePart(uri, "", CompressionOption.NotCompressed);
-                            using (Stream dest = part.GetStream())
-                                {
-                                    job.Stream.Position = 0;
-                                    job.Stream.CopyTo(dest);
-                                }
+                            job.Stream.Position = 0;
+                            zip.AddEntry(job.Name, job.Stream);
                         }
                         catch (Exception ex)
                         {
-                            log.LogError(ex, $"[Zipper] Error in job {currentJobName}, ActivityDetails: {activity}, exception: {ex.Message}");
+                            log.LogError(ex, $"[Zipper] Error in job {job.Name}, ActivityDetails: {activity}, exception: {ex.Message}");
                             job.Tags.Status = BlobStatus.Error;
                             job.Tags.Text = "Exception in create blob part in zip";
                         }
                     }
+
+                    zip.Save(zipStream);
                 }
 
                 log.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
