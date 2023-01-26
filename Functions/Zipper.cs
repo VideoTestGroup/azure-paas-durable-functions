@@ -14,7 +14,6 @@ public static class Zipper
         ILogger log)
     {
         log.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity}");
-        log.LogInformation($"[Zipper] QueryAsync activity: {activity}");
         List<BatchJob> jobs = new List<BatchJob>();
 
         await foreach (BlobTags tags in ftpClient.QueryAsync(t =>

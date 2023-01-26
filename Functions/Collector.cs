@@ -19,7 +19,6 @@ public class Collector
     {
         log.LogInformation($"[Collector] executed at: {DateTime.Now}");
         await Task.WhenAll(Namespaces.Select(@namespace => CollectorRun(@namespace, containerClient, starter, log)));
-        log.LogInformation($"[Collector] finish at: {DateTime.Now}");
     }
 
     public async Task CollectorRun(string @namespace, BlobContainerClient containerClient, IDurableOrchestrationClient starter, ILogger log)
@@ -34,7 +33,6 @@ public class Collector
         {
             await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Pending && t.Namespace == @namespace))
             {
-                log.LogInformation($"[Collector {@namespace}] found relevant blob {tag.Name}");
                 totalSize += tag.Length;
                 hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
                 tags.Add(tag);
@@ -66,18 +64,11 @@ public class Collector
             log.LogInformation($"[Collector {@namespace}] Tags marked {tags.Count} blobs.\n BatchId: {batchId} \n TotalSize: {totalSize}.\nFiles: {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
 
             var activity = new ActivityAction() { Namespace = @namespace, BatchId = batchId };
-
-            log.LogInformation($"[Collector {@namespace}] trigger ZipperOrchestrator with activity {activity}");
-            await starter.StartNewAsync(nameof(ZipperOrchestrator), activity).ContinueWith((res) =>
-            {
-                log.LogInformation($"[Collector {@namespace}] finish trigger ZipperOrchestrator with activity {activity}");
-            });
+            await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
         }
         catch (Exception ex)
         {
             log.LogError(ex, $"[Collector {@namespace}] failed, exMessage: {ex.Message}");
         }
-
-        log.LogInformation($"[Collector {@namespace}] finish run for namespace: {@namespace}");
     }
 }

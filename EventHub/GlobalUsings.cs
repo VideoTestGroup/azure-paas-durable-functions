@@ -10,4 +10,5 @@ global using Azure.Storage.Blobs;
 global using Azure.Storage.Blobs.Models;
 
 global using ImageIngest.EventHub;
+global using Azure.Storage.Sas;
 

@@ -1,8 +1,5 @@
-using Azure.Storage.Blobs;
-using Azure.Storage.Sas;
-using Microsoft.Azure.WebJobs.Extensions.DurableTask;
-
 namespace ImageIngest.Functions;
+
 public class ZipDistributorOrchestrator
 {
     private static List<DistributionTarget> DistributionTargets { get; } =
@@ -64,8 +61,6 @@ public class ZipDistributorOrchestrator
             log.LogInformation($"[ZipDistributorOrchestrator] zip {blobName} successfully copy to all destinations");
         }
 
-        log.LogInformation($"[ZipDistributorOrchestrator] start delete zip {blobName}");
         await context.CallActivityAsync(nameof(ZipDeleteActivity), blobName);
-        log.LogInformation($"[ZipDistributorOrchestrator] finish delete zip {blobName}");
     }
 }
