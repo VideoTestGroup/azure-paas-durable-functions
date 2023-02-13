@@ -1,4 +1,5 @@
 using Azure.Messaging.EventGrid;
+using ImageIngest.Functions.Interfaces;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using System.Text.RegularExpressions;
 
@@ -12,6 +13,7 @@ public class BlobListener
     public async Task Run(
         [EventGridTrigger] EventGridEvent blobEvent, 
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
+        [DurableClient] IDurableClient durableClient,
         ILogger log)
     {
         log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
@@ -31,6 +33,20 @@ public class BlobListener
         {
             log.LogError(ex, $"[BlobListener] Error check blob: {blobClient.Name} ExistsAsync");
         }
+
+        var target = new EntityId(nameof(DuplicateImages), "blobs");
+        var images = await durableClient.ReadEntityStateAsync<DuplicateImages>(target);
+
+        if (images.EntityExists && images.EntityState.DuplicatesImages != null && images.EntityState.DuplicatesImages.ContainsKey(blobName))
+        {
+            return;
+        }
+
+        await durableClient.SignalEntityAsync<IDuplicateImages>("blobs", x => x.Add(new IngestImage()
+        {
+            ImageId = blobName,
+            Timestamp = DateTime.UtcNow
+        }));
 
         BlobProperties props = await blobClient.GetPropertiesAsync();
         BlobTags tags = new BlobTags(props, blobClient);
