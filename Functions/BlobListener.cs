@@ -39,6 +39,7 @@ public class BlobListener
 
         if (images.EntityExists && images.EntityState.DuplicatesImages != null && images.EntityState.DuplicatesImages.ContainsKey(blobName))
         {
+            log.LogWarning($"[BlobListener] blob: {blobClient.Name} is already handled so ignoring");
             return;
         }
 
