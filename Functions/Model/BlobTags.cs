@@ -54,6 +54,12 @@ public class BlobTags
         set => tags[nameof(Text)] = value;
     }
 
+    public bool IsDuplicate
+    {
+        get => tags.GetValue<string>(nameof(IsDuplicate)) == "1";
+        set => tags[nameof(IsDuplicate)] = value ? "1" : "0";
+    }
+
     public void Initialize()
     {
         tags[nameof(Container)] = string.Empty;
@@ -64,6 +70,7 @@ public class BlobTags
         tags[nameof(Length)] = "0";
         tags[nameof(Created)] = DateTime.Now.ToFileTimeUtc().ToString();
         tags[nameof(Modified)] = DateTime.Now.ToFileTimeUtc().ToString();
+        tags[nameof(IsDuplicate)] = "0";
     }
 
     public BlobTags() { }

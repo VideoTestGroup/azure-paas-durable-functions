@@ -1,5 +1,4 @@
 using Azure.Messaging.EventGrid;
-using ImageIngest.Functions.Interfaces;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using System.Text.RegularExpressions;
 
@@ -8,6 +7,7 @@ namespace ImageIngest.Functions;
 public class BlobListener
 {
     public static string EventGridSubjectPrefix { get; set; } = Environment.GetEnvironmentVariable("FTPEventGridSubjectPrefix");
+    public static string DuplicateBlobsEntityName = Environment.GetEnvironmentVariable("DuplicateBlobsEntityName");
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
@@ -34,26 +34,28 @@ public class BlobListener
             log.LogError(ex, $"[BlobListener] Error check blob: {blobClient.Name} ExistsAsync");
         }
 
-        var target = new EntityId(nameof(DuplicateImages), "blobs");
-        var images = await durableClient.ReadEntityStateAsync<DuplicateImages>(target);
+        var entityId = new EntityId(nameof(DuplicateBlobs), DuplicateBlobsEntityName);
+        var duplicatesBlobsState = await durableClient.ReadEntityStateAsync<DuplicateBlobs>(entityId);
 
-        if (images.EntityExists && images.EntityState.DuplicatesImages != null && images.EntityState.DuplicatesImages.ContainsKey(blobName))
+        if (duplicatesBlobsState.EntityExists &&
+            duplicatesBlobsState.EntityState.DuplicateBlobsDic != null &&
+            duplicatesBlobsState.EntityState.DuplicateBlobsDic.ContainsKey(blobName))
         {
             log.LogWarning($"[BlobListener] blob: {blobClient.Name} is already handled so ignoring");
+            Response<GetBlobTagResult> res = await blobClient.GetTagsAsync();
+            var blobTags = new BlobTags(res.Value.Tags);
+            blobTags.IsDuplicate = true;
+            await blobClient.WriteTagsAsync(blobTags);
             return;
         }
 
-        await durableClient.SignalEntityAsync<IDuplicateImages>("blobs", x => x.Add(new IngestImage()
-        {
-            ImageId = blobName,
-            Timestamp = DateTime.UtcNow
-        }));
-
+        await durableClient.SignalEntityAsync<IDuplicateBlobs>(entityId, x => x.Add(blobName, DateTime.UtcNow));
         BlobProperties props = await blobClient.GetPropertiesAsync();
+
         BlobTags tags = new BlobTags(props, blobClient);
 
         string blobNameWithoutExt = Path.GetFileNameWithoutExtension(blobName);
-        tags.Namespace = GetBlobNamespace(blobNameWithoutExt, log);
+        tags.Namespace = GetBlobNamespace(blobNameWithoutExt);
 
         Response response = await blobClient.WriteTagsAsync(tags);
         if (response.IsError)
@@ -64,7 +66,7 @@ public class BlobListener
         log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
     }
 
-    private static string GetBlobNamespace(string blobName, ILogger log)
+    private static string GetBlobNamespace(string blobName)
     {
         string @namespace = blobName.Split("_").LastOrDefault();
 

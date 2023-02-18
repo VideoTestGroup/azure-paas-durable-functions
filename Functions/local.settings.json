@@ -11,6 +11,8 @@
     "ZipBatchMaxSizeMB": 20,
     "CollectorTimer": 5,
     "BlobsDeleteTimer": 10,
+    "DuplicateBlobsEntityName": "blobs",
+    "DuplicateBlobsDeleteThreshold": "05:00",
     "BlobOutdatedThreshold": "05:00",
     "LeaseDuration": "00:00:30",
     "FTPEventGridSubjectPrefix": "/blobServices/default/containers/files/blobs/",

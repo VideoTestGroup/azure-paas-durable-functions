@@ -1,3 +1,5 @@
+using Azure.Storage.Sas;
+
 namespace ImageIngest.Functions;
 
 public class ZipDistributorOrchestrator

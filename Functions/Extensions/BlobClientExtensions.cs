@@ -32,7 +32,7 @@ public static class BlobClientExtensions
         return deletedCount;
     }
 
-    public static string BuildTagsQuery(BlobStatus? status = null, string @namespace = null, string batchId = null, long? modifiedTime = null)
+    public static string BuildTagsQuery(BlobStatus? status = null, string @namespace = null, string batchId = null, long? modifiedTime = null, bool? isDuplicate = null)
     {
         var queries = new List<string>();
 
@@ -56,6 +56,11 @@ public static class BlobClientExtensions
             queries.Add($@"""{nameof(BlobTags.Modified)}""<'{modifiedTime}'");
         }
 
+        if (isDuplicate.HasValue)
+        {
+            queries.Add($@"""{nameof(BlobTags.IsDuplicate)}""='{(isDuplicate.Value ? "1" : "0")}'");
+        }
+
         return string.Join(" AND ", queries);
     }
 
@@ -67,6 +72,7 @@ public static class BlobClientExtensions
             var props = await blobClient.GetPropertiesAsync();
             yield return new BlobTags(tags.Value.Tags);
         }
+
         yield return new BlobTags();
     }
 
