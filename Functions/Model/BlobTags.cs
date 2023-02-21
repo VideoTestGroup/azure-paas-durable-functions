@@ -66,7 +66,6 @@ public class BlobTags
         tags[nameof(Text)] = string.Empty;
         tags[nameof(Status)] = BlobStatus.Pending.ToString();
         tags[nameof(BatchId)] = string.Empty;
-        tags[nameof(Namespace)] = "default"; ;
         tags[nameof(Length)] = "0";
         tags[nameof(Created)] = DateTime.Now.ToFileTimeUtc().ToString();
         tags[nameof(Modified)] = DateTime.Now.ToFileTimeUtc().ToString();
