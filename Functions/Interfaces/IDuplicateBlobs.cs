@@ -1,7 +1,7 @@
 ﻿namespace ImageIngest.Functions.Interfaces;
 public interface IDuplicateBlobs
 {
-    void Add(string blobName, DateTime timestamp);
+    void Add(DuplicateBlob duplicateBlob);
     void Remove(DateTime timestamp);
     Task<Dictionary<string, DateTime>> Get();
 }

@@ -6,11 +6,11 @@ public class DuplicateBlobs : IDuplicateBlobs
     [JsonProperty]
     public Dictionary<string, DateTime> DuplicateBlobsDic { get; set; } = new Dictionary<string, DateTime>();
 
-    public void Add(string blobName, DateTime timestamp)
+    public void Add(DuplicateBlob duplicateBlob)
     {
-        if (!DuplicateBlobsDic.ContainsKey(blobName))
+        if (!DuplicateBlobsDic.ContainsKey(duplicateBlob.BlobName))
         {
-            DuplicateBlobsDic.Add(blobName, timestamp);
+            DuplicateBlobsDic.Add(duplicateBlob.BlobName, duplicateBlob.Timestamp);
         } 
     }
 
