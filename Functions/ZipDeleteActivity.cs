@@ -24,8 +24,8 @@ public class ZipDeleteActivity
 
         log.LogInformation($"[ZipDeleteActivity] Delete by query '{deleteQuery}', BatchId = {batchId}");
 
-        await ftpBlobContainerClient.DeleteByTagsAsync(deleteQuery);
+        var deletedCount = await ftpBlobContainerClient.DeleteByTagsAsync(deleteQuery);
 
-        log.LogInformation($"[ZipDeleteActivity] zip {blobName} blobs deleted successfully");
+        log.LogInformation($"[ZipDeleteActivity] zip {blobName} blobs deleted successfully, deleted: {deletedCount} blobs");
     }
 }
