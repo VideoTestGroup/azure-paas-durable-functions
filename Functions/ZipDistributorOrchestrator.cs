@@ -49,7 +49,7 @@ public class ZipDistributorOrchestrator
         var results = await Task.WhenAll(tasks);
         if (results.Any(res => !res.IsSuccessfull))
         {
-            string failedTargets = string.Join(", ", results.Where(res => !res.IsSuccessfull).Select(res => res.TargetName));
+            string failedTargets = string.Join(",", results.Where(res => !res.IsSuccessfull).Select(res => res.TargetName));
             log.LogWarning($"[ZipDistributorOrchestrator] zip {blobName} not successfully copy to all destinations, failed in {failedTargets}");
             await context.CallActivityAsync(nameof(ZipFailedActivity), new ZipFailedParams() { BlobName = blobName, FailedTargets = failedTargets } );
         }

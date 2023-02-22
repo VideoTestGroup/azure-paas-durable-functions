@@ -8,7 +8,7 @@ public class CopyZipActivity
     [FunctionName(nameof(CopyZipActivity))]
     public static async Task<CopyZipResponse> Run(
         [ActivityTrigger] CopyZipRequest request,
-        [Blob(Consts.ZipContainerName + "/{request.BlobName}.zip", FileAccess.Read, Connection = "AzureWebJobsZipStorage")] Stream blobInput,
+        [Blob(Consts.ZipContainerName + "/{request.BlobName}", FileAccess.Read, Connection = "AzureWebJobsZipStorage")] Stream blobInput,
         ILogger log)
     {
         log.LogInformation($"[CopyZipActivity] Start copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, containerName - {request.ContainerName}");
