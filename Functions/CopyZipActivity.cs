@@ -8,6 +8,7 @@ public class CopyZipActivity
     [FunctionName(nameof(CopyZipActivity))]
     public static async Task<CopyZipResponse> Run(
         [ActivityTrigger] CopyZipRequest request,
+        [Blob(Consts.ZipContainerName + "/{request.BlobName}.zip", FileAccess.Read, Connection = "AzureWebJobsZipStorage")] Stream blobInput,
         ILogger log)
     {
         log.LogInformation($"[CopyZipActivity] Start copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, containerName - {request.ContainerName}");
@@ -16,8 +17,7 @@ public class CopyZipActivity
 
         try
         {
-            var copyProcess = await destClient.StartCopyFromUriAsync(request.SourceBlobSasToken);
-            await copyProcess.WaitForCompletionAsync();
+            await destClient.UploadAsync(blobInput, overwrite: true);
         }
         catch (Exception ex)
         {
@@ -27,14 +27,6 @@ public class CopyZipActivity
         }
 
         log.LogInformation($"[CopyZipActivity] Finish copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}");
-        var destProps = destClient.GetProperties().Value;
-        if (destProps.BlobCopyStatus != CopyStatus.Success)
-        {
-            log.LogError($"[CopyZipActivity] Unsuccessfull copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, description: {destProps.CopyStatusDescription}");
-            response.IsSuccessfull = false;
-            return response;
-        }
-
         response.IsSuccessfull = true;
         return response;
     }

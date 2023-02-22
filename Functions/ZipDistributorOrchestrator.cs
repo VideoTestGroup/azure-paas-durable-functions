@@ -16,10 +16,6 @@ public class ZipDistributorOrchestrator
     {
         string blobName = context.GetInput<string>();
         log.LogInformation($"[ZipDistributorOrchestrator] Triggered Function for zip: {blobName}, InstanceId {context.InstanceId}");
-
-        var blobClient = new BlobClient(AzureWebJobsZipStorage, Consts.ZipContainerName, blobName);
-        var sourceBlobSasToken = blobClient.GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.Now.AddMinutes(10));
-
         List<Task<CopyZipResponse>> tasks = new List<Task<CopyZipResponse>>();
 
         foreach (var distributionTarget in DistributionTargets)
@@ -47,7 +43,6 @@ public class ZipDistributorOrchestrator
                 BlobName = blobName,
                 ContainerName = containerName,
                 DistributionTarget = distributionTarget,
-                SourceBlobSasToken = sourceBlobSasToken
             }));
         }
 
