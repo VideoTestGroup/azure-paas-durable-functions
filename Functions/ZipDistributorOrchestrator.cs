@@ -30,6 +30,7 @@ public class ZipDistributorOrchestrator
                 var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
                 using (await context.LockAsync(entityId))
                 {
+                    log.LogInformation($"entity id {entityId}");
                     int containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
                     containerName += containerNum.ToString();
                 }
