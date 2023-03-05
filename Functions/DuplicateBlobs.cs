@@ -27,6 +27,11 @@ public class DuplicateBlobs : IDuplicateBlobs
         }
     }
 
+    public void Reset()
+    {
+        DuplicateBlobsDic.Clear();
+    }
+
     [FunctionName(nameof(DuplicateBlobs))]
     public static Task HandleEntityOperation([EntityTrigger] IDurableEntityContext context)
     {
