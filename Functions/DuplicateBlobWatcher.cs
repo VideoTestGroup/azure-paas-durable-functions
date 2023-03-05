@@ -1,3 +1,5 @@
+namespace ImageIngest.Functions;
+
 [FunctionName("DuplicateBlobWatcher")]
 public static async Task<IActionResult> Run(
     [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
