@@ -29,17 +29,28 @@ public class ZipDistributorOrchestrator
                 log.LogInformation($"[ZipDistributorOrchestrator] Get container index for - {distributionTarget.TargetName}");
                 var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
                 var watch = System.Diagnostics.Stopwatch.StartNew();
-                using (await context.LockAsync(entityId))
+                log.LogInformation($"[Timer] Started Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
+//                using (await context.LockAsync(entityId))
+                int containerNum = 0;
+//                List<Task> tasks = new List<Task>();
+                try
                 {
                     watch.Stop();
-                    log.LogInformation($"Entered Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
-                    int containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
+                    log.LogInformation($"[Timer] Entered Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
+                    containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
+//                    Task task = context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
+//                    tasks.Add(task);
                     containerName += containerNum.ToString();
+                    log.LogInformation($"[Distribution] Success to {containerName}{containerNum}, distributionTarget: {distributionTarget}")                    
+                }
+                catch(Exception ex)
+                {
+                    log.LogError(ex, $"[Distribution] Failed to {containerName}{containerNum}, distributionTarget: {distributionTarget}")
                 }
                 if(watch.IsRunning)
                 {
                     watch.Stop();
-                    log.LogInformation($"Skipped Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
+                    log.LogInformation($"[Timer] Skipped Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
                 }
                 
                 log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for - {distributionTarget.TargetName} successfully. containerName: {containerName}");
@@ -53,6 +64,7 @@ public class ZipDistributorOrchestrator
                 DistributionTarget = distributionTarget,
             }));
         }
+//      await Task.WhenAll(tasks.ToArray());
 
         var results = await Task.WhenAll(tasks);
         if (results.Any(res => !res.IsSuccessfull))
