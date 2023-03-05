@@ -1,3 +1,6 @@
+using System.Web;
+using Microsoft.AspNetCore.Mvc
+
 namespace ImageIngest.Functions;
 
 public class DuplicateBlobWatcher
