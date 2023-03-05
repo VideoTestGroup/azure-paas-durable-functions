@@ -27,7 +27,7 @@ public class ZipDistributorOrchestrator
                 distributionTarget.ContainersCount.HasValue)
             {
                 log.LogInformation($"[ZipDistributorOrchestrator] Get container index for - {distributionTarget.TargetName}");
-                var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
+                var entityId = new EntityId(nameof(DuplicateBlobs), distributionTarget.TargetName);
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 log.LogInformation($"[Timer] Started Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
 //                using (await context.LockAsync(entityId))
