@@ -1,5 +1,5 @@
 using System.Web;
-using Microsoft.AspNetCore.Mvc
+using Microsoft.AspNetCore.Mvc;
 
 namespace ImageIngest.Functions;
 
