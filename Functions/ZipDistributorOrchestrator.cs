@@ -41,11 +41,11 @@ public class ZipDistributorOrchestrator
 //                    Task task = context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
 //                    tasks.Add(task);
                     containerName += containerNum.ToString();
-                    log.LogInformation($"[Distribution] Success to {containerName}{containerNum}, distributionTarget: {distributionTarget}")                    
+                    log.LogInformation($"[Distribution] Success to {containerName}{containerNum}, distributionTarget: {distributionTarget}");                    
                 }
                 catch(Exception ex)
                 {
-                    log.LogError(ex, $"[Distribution] Failed to {containerName}{containerNum}, distributionTarget: {distributionTarget}")
+                    log.LogError(ex, $"[Distribution] Failed to {containerName}{containerNum}, distributionTarget: {distributionTarget}");
                 }
                 if(watch.IsRunning)
                 {
