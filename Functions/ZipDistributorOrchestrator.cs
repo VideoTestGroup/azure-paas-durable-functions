@@ -28,13 +28,20 @@ public class ZipDistributorOrchestrator
             {
                 log.LogInformation($"[ZipDistributorOrchestrator] Get container index for - {distributionTarget.TargetName}");
                 var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 using (await context.LockAsync(entityId))
                 {
-                    log.LogInformation($"entity id {entityId}");
+                    watch.Stop();
+                    log.LogInformation($"Entered Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
                     int containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
                     containerName += containerNum.ToString();
                 }
-
+                if(watch.IsRunning)
+                {
+                    watch.Stop();
+                    log.LogInformation($"Skipped Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
+                }
+                
                 log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for - {distributionTarget.TargetName} successfully. containerName: {containerName}");
             }
 
