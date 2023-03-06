@@ -1,8 +1,8 @@
 namespace ImageIngest.Functions;
 
-public class DurableTargetState
+public class DurableTargetStates
 {
-    [FunctionName(nameof(DurableTargetState))]
+    [FunctionName(nameof(DurableTargetStates))]
     public static void Run([EntityTrigger] IDurableEntityContext ctx)
     {
         if (!ctx.HasState)

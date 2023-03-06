@@ -27,7 +27,7 @@ public class ZipDistributorOrchestrator
                 distributionTarget.ContainersCount.HasValue)
             {
                 log.LogInformation($"[ZipDistributorOrchestrator] Get container index for - {distributionTarget.TargetName}");
-                var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
+                var entityId = new EntityId(nameof(DurableTargetStates), distributionTarget.TargetName);
 
                 try
                 {
