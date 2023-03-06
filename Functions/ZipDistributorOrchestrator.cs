@@ -29,19 +29,16 @@ public class ZipDistributorOrchestrator
                 log.LogInformation($"[ZipDistributorOrchestrator] Get container index for - {distributionTarget.TargetName}");
                 var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
 
-                using (await context.LockAsync(entityId))
+                try
                 {
-                    try
-                    {
-                        int containerNum = 0;
-                        containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
-                        containerName += containerNum.ToString();
-                        log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for - {distributionTarget.TargetName} successfully. containerName: {containerName}");
-                    }
-                    catch (Exception ex)
-                    {
-                        log.LogError(ex, $"[ZipDistributorOrchestrator] Failed to get container index for - {distributionTarget.TargetName}");
-                    }
+                    int containerNum = 0;
+                    containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
+                    containerName += containerNum.ToString();
+                    log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for - {distributionTarget.TargetName} successfully. containerName: {containerName}");
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, $"[ZipDistributorOrchestrator] Failed to get container index for - {distributionTarget.TargetName}");
                 }
             }
 
