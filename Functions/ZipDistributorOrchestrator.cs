@@ -27,33 +27,22 @@ public class ZipDistributorOrchestrator
                 distributionTarget.ContainersCount.HasValue)
             {
                 log.LogInformation($"[ZipDistributorOrchestrator] Get container index for - {distributionTarget.TargetName}");
-                var entityId = new EntityId(nameof(DuplicateBlobs), distributionTarget.TargetName);
-                var watch = System.Diagnostics.Stopwatch.StartNew();
-                log.LogInformation($"[Timer] Started Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
-//                using (await context.LockAsync(entityId))
-                int containerNum = 0;
-//                List<Task> tasks = new List<Task>();
-                try
+                var entityId = new EntityId(nameof(DurableTargetState), distributionTarget.TargetName);
+
+                using (await context.LockAsync(entityId))
                 {
-                    watch.Stop();
-                    log.LogInformation($"[Timer] Entered Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
-                    containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
-//                    Task task = context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
-//                    tasks.Add(task);
-                    containerName += containerNum.ToString();
-                    log.LogInformation($"[Distribution] Success to {containerName}{containerNum}, distributionTarget: {distributionTarget}");                    
+                    try
+                    {
+                        int containerNum = 0;
+                        containerNum = await context.CallEntityAsync<int>(entityId, "GetNext", distributionTarget.ContainersCount.Value);
+                        containerName += containerNum.ToString();
+                        log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for - {distributionTarget.TargetName} successfully. containerName: {containerName}");
+                    }
+                    catch (Exception ex)
+                    {
+                        log.LogError(ex, $"[ZipDistributorOrchestrator] Failed to get container index for - {distributionTarget.TargetName}");
+                    }
                 }
-                catch(Exception ex)
-                {
-                    log.LogError(ex, $"[Distribution] Failed to {containerName}{containerNum}, distributionTarget: {distributionTarget}");
-                }
-                if(watch.IsRunning)
-                {
-                    watch.Stop();
-                    log.LogInformation($"[Timer] Skipped Critical Section: Lock Stopwatch: {watch.ElapsedMilliseconds}, entity id {entityId}");
-                }
-                
-                log.LogInformation($"[ZipDistributorOrchestrator] Recived container index for - {distributionTarget.TargetName} successfully. containerName: {containerName}");
             }
 
             log.LogInformation($"[ZipDistributorOrchestrator] Trigger CopyZipActivity for distribution target - {distributionTarget.TargetName}");
@@ -64,7 +53,6 @@ public class ZipDistributorOrchestrator
                 DistributionTarget = distributionTarget,
             }));
         }
-//      await Task.WhenAll(tasks.ToArray());
 
         var results = await Task.WhenAll(tasks);
         if (results.Any(res => !res.IsSuccessfull))
