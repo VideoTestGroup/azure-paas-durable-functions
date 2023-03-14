@@ -15,10 +15,19 @@ public class CopyZipActivity
         //var destClient = new BlobClient(request.DistributionTarget.ConnectionString, request.ContainerName, request.BlobName);
         var destClient = new BlobClient(new Uri(request.BlobName), new AzureSasCredential(request.DistributionTarget.ConnectionString), new BlobClientOptions());
         var response = new CopyZipResponse() { TargetName = request.DistributionTarget.TargetName };
-
+        
+        BlobContainerClient targetContainerClient = new BlobContainerClient(request.DistributionTarget.ConnectionString);
+            BlobClient destClient = targetContainerClient.GetBlobClient(request.BlobName);
+            BlobUploadOptions options = new BlobUploadOptions
+            {
+                AccessTier = AccessTier.Hot,
+            };
+            
+        
         try
         {
-            await destClient.UploadAsync(blobInput, overwrite: true);
+            //await destClient.UploadAsync(blobInput, overwrite: true);
+            BlobContentInfo info = await amsBlob.UploadAsync(blob, options);
         }
         catch (Exception ex)
         {
