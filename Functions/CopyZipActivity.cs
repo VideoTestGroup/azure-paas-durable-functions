@@ -14,9 +14,9 @@ public class CopyZipActivity
         log.LogInformation($"[CopyZipActivity] Start copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, containerName - {request.ContainerName}");
         //var destClient = new BlobClient(request.DistributionTarget.ConnectionString, request.ContainerName, request.BlobName);
         //var destClient = new BlobClient(new Uri(request.BlobName), new AzureSasCredential(request.DistributionTarget.ConnectionString), new BlobClientOptions());
-        var response = new CopyZipResponse() { TargetName = new Uri(request.DistributionTarget.TargetName) };
+        var response = new CopyZipResponse() { TargetName = request.DistributionTarget.TargetName };
         
-        BlobContainerClient targetContainerClient = new BlobContainerClient(request.DistributionTarget.ConnectionString);
+        BlobContainerClient targetContainerClient = new BlobContainerClient(new Uri(request.DistributionTarget.ConnectionString));
             BlobClient destClient = targetContainerClient.GetBlobClient(request.BlobName);
             BlobUploadOptions options = new BlobUploadOptions
             {
