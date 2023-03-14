@@ -13,7 +13,7 @@ public class CopyZipActivity
     {
         log.LogInformation($"[CopyZipActivity] Start copy {request.BlobName} to destination - {request.DistributionTarget.TargetName}, containerName - {request.ContainerName}");
         //var destClient = new BlobClient(request.DistributionTarget.ConnectionString, request.ContainerName, request.BlobName);
-        var destClient = new BlobClient(new Uri(request.BlobName), new AzureSasCredential(request.DistributionTarget.ConnectionString), new BlobClientOptions());
+        //var destClient = new BlobClient(new Uri(request.BlobName), new AzureSasCredential(request.DistributionTarget.ConnectionString), new BlobClientOptions());
         var response = new CopyZipResponse() { TargetName = request.DistributionTarget.TargetName };
         
         BlobContainerClient targetContainerClient = new BlobContainerClient(request.DistributionTarget.ConnectionString);
@@ -27,7 +27,7 @@ public class CopyZipActivity
         try
         {
             //await destClient.UploadAsync(blobInput, overwrite: true);
-            BlobContentInfo info = await amsBlob.UploadAsync(blob, options);
+            BlobContentInfo info = await destClient.UploadAsync(blob, options);
         }
         catch (Exception ex)
         {
