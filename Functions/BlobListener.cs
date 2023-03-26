@@ -48,7 +48,7 @@ public class BlobListener
             await blobClient.WriteTagsAsync(blobTags);
             return;
         }
-        log.LogError("bla");
+        
         await durableClient.SignalEntityAsync<IDuplicateBlobs>(entityId, x => x.Add(new DuplicateBlob() { BlobName = blobName, Timestamp = DateTime.UtcNow }));
         BlobProperties props = await blobClient.GetPropertiesAsync();
 
