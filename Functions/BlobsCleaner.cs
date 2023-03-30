@@ -34,7 +34,7 @@ public class BlobsCleaner
         deleteCount = await blobContainerClient.DeleteByTagsAsync(deleteQuery);
         log.LogInformation($"[BlobsCleaner] {deleteCount} duplicate blobs cleaned successfully");
         
-        log.LogInformation($"[BlobsCleaner] Start Retry Batched files blobs at: {DateTime.Now}");
+        log.LogInformation($"[BlobsCleaner] Start Retry Batched files at blobs: {DateTime.Now}");
         string batchedQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Batched, modifiedTime: DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc());
         var items = await blobContainerClient.QueryByTagsAsync(batchedQuery);
        
