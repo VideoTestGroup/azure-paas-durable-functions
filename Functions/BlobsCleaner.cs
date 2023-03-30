@@ -42,10 +42,11 @@ public class BlobsCleaner
             {
                 items.Add(tag);
               }
-        var result = items.GroupBy(x => x.BatchId) .Select(group => new { BatchId = group.Key, BatchImg = group.Take(1) }) .ToList();
-        foreach (var group in result)
+        var result = items.GroupBy(x => x.BatchId, x=>x.Namespace) .Select(group => new { BatchId = group.Key, Namespace = group.FirstOrDefault() }) .ToList();
+        foreach (var item in result)
         {
-            var activity = new ActivityAction() { Namespace = group.BatchImg.Namespace , BatchId = group.BatchImg.BatchId };
+            //var item = group.FirstOrDefualt();
+            var activity = new ActivityAction() { Namespace = item.Namespace , BatchId = item.BatchId };
             await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
         }
         
