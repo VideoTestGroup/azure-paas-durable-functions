@@ -38,7 +38,7 @@ public class BlobsCleaner
         string batchedQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Batched, modifiedTime: DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc());
         var items = await client.FindBlobsByTagsAsync(batchedQuery);
        
-        var result = items.GroupBy(x => new x.BatchId) .Select(group => new { BatchId = group.Key, BatchImg = group.Take(1) }) .ToList();
+        var result = items.GroupBy(x => x.BatchId) .Select(group => new { BatchId = group.Key, BatchImg = group.Take(1) }) .ToList();
         foreach (var group in result)
         {
             var activity = new ActivityAction() { Namespace = group.BatchImg.Namespace , BatchId = group.BatchImg.BatchId };
