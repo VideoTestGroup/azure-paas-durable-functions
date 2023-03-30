@@ -20,7 +20,6 @@ public class BlobsCleaner
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         [DurableClient] IDurableClient durableClient,
         [DurableClient] IDurableOrchestrationClient starter,
-        [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
     {
         log.LogInformation($"[BlobsCleaner] Start delete zipped blobs at: {DateTime.Now}");
@@ -37,7 +36,7 @@ public class BlobsCleaner
         
         log.LogInformation($"[BlobsCleaner] Start Retry Batched files blobs at: {DateTime.Now}");
         string batchedQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Batched, modifiedTime: DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc());
-        var items = await containerClient.FindBlobsByTagsAsync(batchedQuery);
+        var items = await blobContainerClient.FindBlobsByTagsAsync(batchedQuery);
        
         var result = items.GroupBy(x => x.BatchId) .Select(group => new { BatchId = group.Key, BatchImg = group.Take(1) }) .ToList();
         foreach (var group in result)
