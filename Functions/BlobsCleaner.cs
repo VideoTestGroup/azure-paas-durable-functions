@@ -48,8 +48,9 @@ public class BlobsCleaner
             //var item = group.FirstOrDefualt();
             var activity = new ActivityAction() { Namespace = item.Namespace , BatchId = item.BatchId };
             await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
+            log.LogInformation($"[BlobsCleaner] Namespace {item.Namespace} and {item.BatchId} Were Batched blobs started successfully");
         }
-        
+        log.LogInformation($"[BlobsCleaner] Batches {result.Count} and files {items.Count} Batch blobs strated successfully");
     }
 }
 
