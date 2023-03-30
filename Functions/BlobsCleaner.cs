@@ -36,7 +36,7 @@ public class BlobsCleaner
         
         log.LogInformation($"[BlobsCleaner] Start Retry Batched files blobs at: {DateTime.Now}");
         string batchedQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Batched, modifiedTime: DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc());
-        var items = await blobContainerClient.FindBlobsByTagsAsync(batchedQuery);
+        var items = await blobContainerClient.QueryByTagsAsync(batchedQuery);
        
         var result = items.GroupBy(x => x.BatchId) .Select(group => new { BatchId = group.Key, BatchImg = group.Take(1) }) .ToList();
         foreach (var group in result)
