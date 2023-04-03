@@ -15,7 +15,7 @@
     "DuplicateBlobsDeleteThreshold": "00:05",
     "BlobOutdatedThreshold": "00:05",
     "LeaseDuration": "00:00:30",
-    "FTPEventGridSubjectPrefix": "/blobServices/default/containers/incomming/blobs/",
+    "FTPEventGridSubjectPrefix": "/blobServices/default/containers/files/blobs/",
     "ZipEventGridSubjectPrefix": "/blobServices/default/containers/zip/blobs/",
     "SasDuration": "00:01:30",
     "DefaultBlobType": "P1",
