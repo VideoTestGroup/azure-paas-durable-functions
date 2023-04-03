@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="5.0.1" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Blobs" Version="5.0.1" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid" Version="3.2.1" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="4.2.0" />
     <PackageReference Include="7-Zip.CommandLine" Version="18.1.0" />
     <PackageReference Include="System.IO.Packaging" Version="6.0.0" />
   </ItemGroup>
