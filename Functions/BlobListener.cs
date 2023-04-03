@@ -14,10 +14,20 @@ public class BlobListener
         [EventGridTrigger] EventGridEvent blobEvent, 
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         [DurableClient] IDurableClient durableClient,
+        [CosmosDB(
+            databaseName: "FilesLog",
+            containerName: "files",
+            Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
         ILogger log)
     {
         log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
         string blobName = blobEvent.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+
+        await fileLogOut.AddAsync(new FileLog(blobName){ 
+            container = Consts.FTPContainerName, 
+            eventGrid = FileLog.ConvertEvent(blobEvent)
+        });
+
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
         try
@@ -62,6 +72,13 @@ public class BlobListener
         {
             log.LogError(new EventId(1001), response.ToString());
         }
+
+        await fileLogOut.AddAsync(new FileLog(blobName){ 
+            container = Consts.FTPContainerName, 
+            eventGrid = FileLog.ConvertEvent(blobEvent),
+            tags = FileLog.ConvertTags(tags),
+            properties = FileLog.ConvertProperties(props)
+        });
 
         log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
     }
