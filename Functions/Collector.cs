@@ -12,9 +12,7 @@ public class Collector
 
     [FunctionName(nameof(Collector))]
     public async Task Run(
-        //[TimerTrigger("*/%CollectorTimer% * * * * *")] TimerInfo myTimer,
-          [TimerTrigger("0 */1 * * * *")] TimerInfo myTimer,
-
+        [TimerTrigger("*/%CollectorTimer% * * * * *")] TimerInfo myTimer,
         [DurableClient] IDurableOrchestrationClient starter,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
