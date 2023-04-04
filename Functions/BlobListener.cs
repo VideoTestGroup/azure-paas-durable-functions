@@ -1,7 +1,3 @@
-//using Azure.Messaging.EventGrid;
-//using Microsoft.Azure.WebJobs.Extensions.EventGrid;
-using Azure.Messaging.EventGrid;
-using Microsoft.Azure.Amqp.Framing;
 using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
@@ -13,9 +9,8 @@ public class BlobListener
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
-            //[EventGridTrigger] EventGridEvent blobEvent,
         [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
-            EventGridEvent myQueueItem,
+            EventGridItem myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
