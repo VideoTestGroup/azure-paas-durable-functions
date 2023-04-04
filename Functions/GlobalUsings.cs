@@ -3,6 +3,7 @@ global using System.Collections.Generic;
 global using System.Linq;
 global using System.IO;
 global using System.Threading.Tasks;
+global using System.Runtime.Serialization;
 
 global using Microsoft.Extensions.Logging;
 
@@ -15,7 +16,7 @@ global using Azure.Storage.Blobs.Models;
 global using Azure.Storage.Blobs.Specialized;
 global using Azure.Storage.Sas;
 
-global using ImageIngest.Functions;
+//global using ImageIngest.Functions;
 global using ImageIngest.Functions.Interfaces;
 global using ImageIngest.Functions.Extensions;
 global using ImageIngest.Functions.Enums;
