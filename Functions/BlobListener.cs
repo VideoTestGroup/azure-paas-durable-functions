@@ -34,7 +34,9 @@ public class BlobListener
 //            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
         };
 
-        logger.LogInformation($"[BlobListener] creating cosmos record log: {log}");
+        var logtxt = JsonConvert.SerializeObject(log, Formatting.Indented);
+
+        logger.LogInformation($"[BlobListener] creating cosmos record log: {logtxt}");
         logger.LogInformation($"[BlobListener] creating cosmos record id: {log.id}");
 
         await fileLogOut.AddAsync(log);
