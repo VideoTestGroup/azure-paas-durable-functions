@@ -1,7 +1,5 @@
 //using Azure.Messaging.EventGrid;
 //using Microsoft.Azure.WebJobs.Extensions.EventGrid;
-using Azure.Messaging.EventGrid;
-using Microsoft.Azure.Amqp.Framing;
 using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
@@ -12,6 +10,8 @@ public class BlobListener
     public static string DuplicateBlobsEntityName = Environment.GetEnvironmentVariable("DuplicateBlobsEntityName");
 
     [FunctionName(nameof(BlobListener))]
+    public async Task Run(
+            //[EventGridTrigger] EventGridEvent blobEvent,
         [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
             string myQueueItem,
             Int32 deliveryCount,
@@ -29,10 +29,18 @@ public class BlobListener
         logger.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
         string blobName = myQueueItem.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
 
-        await fileLogOut.AddAsync(new FileLog(blobName){ 
-            container = Consts.FTPContainerName, 
-            eventGrid = myQueueItem
-        });
+
+        FileLog log = new FileLog(blobName, deliveryCount)
+        {
+            container = Consts.FTPContainerName,
+            eventGrid = myQueueItem,
+            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
+        };
+
+        logger.LogInformation($"[BlobListener] creating cosmos record log: {log}");
+        logger.LogInformation($"[BlobListener] creating cosmos record id: {log.id}");
+
+        await fileLogOut.AddAsync(log);
 
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
