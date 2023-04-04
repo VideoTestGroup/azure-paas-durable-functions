@@ -12,9 +12,8 @@ public class BlobListener
     public static string DuplicateBlobsEntityName = Environment.GetEnvironmentVariable("DuplicateBlobsEntityName");
 
     [FunctionName(nameof(BlobListener))]
-            string myQueueItem,
         [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
-            EventGridEvent myQueueItem,
+            string myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
@@ -27,15 +26,15 @@ public class BlobListener
         ILogger logger)
     {
         //log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
-        log.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
-        string blobName = myQueueItem.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+        logger.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
+        string blobName = myQueueItem.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
 
         await fileLogOut.AddAsync(new FileLog(blobName){ 
             container = Consts.FTPContainerName, 
             eventGrid = myQueueItem
         });
 
-        log.LogInformation($"[BlobListener] first record was registered{blobName}");
+        logger.LogInformation($"[BlobListener] first record was registered{blobName}");
 
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
@@ -83,7 +82,7 @@ public class BlobListener
         }
 
 
-        log.LogInformation($"[BlobListener] seconed record is about to be registered{blobName}");
+        logger.LogInformation($"[BlobListener] seconed record is about to be registered{blobName}");
         await fileLogOut.AddAsync(new FileLog(blobName, deliveryCount)
         {
             container = Consts.FTPContainerName,
