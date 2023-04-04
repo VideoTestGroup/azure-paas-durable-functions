@@ -1,3 +1,5 @@
+//using Azure.Messaging.EventGrid;
+//using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
@@ -10,7 +12,7 @@ public class BlobListener
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
         [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
-            EventGridItem myQueueItem,
+            string myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
@@ -23,21 +25,13 @@ public class BlobListener
         ILogger logger)
     {
         //log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
-        logger.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
-        string blobName = myQueueItem.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+        log.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
+        string blobName = myQueueItem.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
 
-
-        FileLog log = new FileLog(blobName, deliveryCount)
-        {
-            container = Consts.FTPContainerName,
-            eventGrid = myQueueItem,
-            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
-        };
-
-        logger.LogInformation($"[BlobListener] creating cosmos record log: {log}");
-        logger.LogInformation($"[BlobListener] creating cosmos record id: {log.id}");
-
-        await fileLogOut.AddAsync(log);
+        await fileLogOut.AddAsync(new FileLog(blobName){ 
+            container = Consts.FTPContainerName, 
+            eventGrid = myQueueItem
+        });
 
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
