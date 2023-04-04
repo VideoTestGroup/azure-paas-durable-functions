@@ -25,7 +25,7 @@ public class FileLog
     public FileLog(string id, int deliveryCount)
     {
         this.id = id;
-        name = id;
+        name = DateTime.Today.ToString("yyyy-MM-dd");
         timestamp = DateTime.UtcNow;
         this.deliveryCount = deliveryCount;
     }
