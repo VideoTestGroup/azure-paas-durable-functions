@@ -21,6 +21,8 @@ public class FileLog
     public QueueItem queueItem { get; set; } 
     [DataMember]
     public BlobTags tags { get; set; }
+    [DataMember]
+    public string message { get; set; }
 
     public FileLog(string id, int deliveryCount)
     {
