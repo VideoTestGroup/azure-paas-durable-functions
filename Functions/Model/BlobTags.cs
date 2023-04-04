@@ -1,4 +1,5 @@
 namespace ImageIngest.Functions.Model;
+[DataContract]
 public class BlobTags
 {
     public string Name { get; set; }

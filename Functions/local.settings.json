@@ -24,6 +24,8 @@
     "P2Mapper": "944_038",
     "P3Mapper": "944_038",
     "P4Mapper": "944_038",
-    "DistributionTargets": []
+    "DistributionTargets": "[]",
+    "ServiceBusConnection": "",
+    "CosmosDBConnection":  ""
   }
 }
