@@ -1,5 +1,5 @@
-using Azure.Messaging.EventGrid;
-using Microsoft.Azure.WebJobs.Extensions.EventGrid;
+//using Azure.Messaging.EventGrid;
+//using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
