@@ -11,9 +11,13 @@ public static class Zipper
         [ActivityTrigger] ActivityAction activity,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient ftpClient,
         [Blob(Consts.ZipContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
-        ILogger log)
+        [CosmosDB(
+            databaseName: "FilesLog",
+            containerName: "files",
+            Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
+        ILogger logger)
     {
-        log.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity}");
+        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity}");
         List<BatchJob> jobs = new List<BatchJob>();
 
         await foreach (BlobTags tags in ftpClient.QueryAsync(t =>
@@ -27,41 +31,55 @@ public static class Zipper
 
         if (jobs.Count < 1)
         {
-            log.LogWarning($"[Zipper] No blobs found for activity: {activity}");
+            logger.LogWarning($"[Zipper] No blobs found for activity: {activity}");
             return null;
         }
 
         // download file streams
         await Task.WhenAll(jobs.Select(job => job.BlobClient.DownloadToAsync(job.Stream)
-            .ContinueWith(r => log.LogInformation($"[Zipper] DownloadToAsync {job.BlobClient.Name}, length: {job.Stream.Length}, Success: {r.IsCompletedSuccessfully}, Exception: {r.Exception?.Message}"))
+            .ContinueWith(r => logger.LogInformation($"[Zipper] DownloadToAsync {job.BlobClient.Name}, length: {job.Stream.Length}, Success: {r.IsCompletedSuccessfully}, Exception: {r.Exception?.Message}"))
         ));
 
         bool isZippedSuccessfull = true;
-        log.LogInformation($"[Zipper] Downloaded {jobs.Count} blobs. Files: {string.Join(",", jobs.Select(j => $"{j.Name} ({j.Stream.Length})"))}");
+        logger.LogInformation($"[Zipper] Downloaded {jobs.Count} blobs. Files: {string.Join(",", jobs.Select(j => $"{j.Name} ({j.Stream.Length})"))}");
         try
         {
             using (MemoryStream zipStream = new MemoryStream())
             {
                 using (ZipFile zip = new ZipFile())
                 {
-                    foreach (var job in jobs)
+                    foreach (BatchJob job in jobs)
                     {
                         try
                         {
                             if (job.Stream == null)
                             {
-                                log.LogError($"[Zipper] Package zip Cannot compress part, no stream created: {job}");
+                                logger.LogError($"[Zipper] Package zip Cannot compress part, no stream created: {job}");
                                 job.Tags.Status = BlobStatus.Error;
                                 job.Tags.Text = "Zip failed, No stream downloaded";
+                                FileLog log = new FileLog(job.Name, 99)
+                                {
+                                    tags = job.Tags,
+                                    container = job.Tags.Container,
+                                    message = job.Tags.Text
+                                };
+                                await fileLogOut.AddAsync(log);
                                 continue;
                             }
 
                             job.Stream.Position = 0;
                             zip.AddEntry(job.Name, job.Stream);
+                            FileLog log1 = new FileLog(job.Name, 99)
+                            {
+                                tags = job.Tags,
+                                container = job.Tags.Container,
+                            };
+                            await fileLogOut.AddAsync(log1);
+
                         }
                         catch (Exception ex)
                         {
-                            log.LogError(ex, $"[Zipper] Error in job {job.Name}, ActivityDetails: {activity}, exception: {ex.Message}");
+                            logger.LogError(ex, $"[Zipper] Error in job {job.Name}, ActivityDetails: {activity}, exception: {ex.Message}");
                             job.Tags.Status = BlobStatus.Error;
                             job.Tags.Text = "Exception in create blob part in zip";
                         }
@@ -70,7 +88,7 @@ public static class Zipper
                     zip.Save(zipStream);
                 }
 
-                log.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
+                logger.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
                 zipStream.Position = 0;
                 var zipBlobClient = zipClient.GetBlobClient($"{activity.BatchId}.zip");
 
@@ -82,30 +100,30 @@ public static class Zipper
                     // So we check if the blob is already exists, if true we ignore this execution with the batchId.
                     if (isExist.Value)
                     {
-                        log.LogWarning($"[Zipper] Zip with batchId {activity.BatchId} already exists. ignoring this execution, ActivityDetails: {activity}");
+                        logger.LogWarning($"[Zipper] Zip with batchId {activity.BatchId} already exists. ignoring this execution, ActivityDetails: {activity}");
                         return null;
                     }
                 }
                 catch (Exception ex )
                 {
-                    log.LogError(ex, $"[Zipper] Error check zip: {activity.BatchId} ExistsAsync");
+                    logger.LogError(ex, $"[Zipper] Error check zip: {activity.BatchId} ExistsAsync");
                 }
 
                 await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream);
-                log.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
+                logger.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
             }
         }
         catch (Exception ex)
         {
             isZippedSuccessfull = false;
-            log.LogError(ex, $"{ex.Message} ActivityDetails: {activity}");
+            logger.LogError(ex, $"{ex.Message} ActivityDetails: {activity}");
         }
 
-        log.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Activity: {activity}");
-        await Task.WhenAll(jobs.Select(job => job.BlobClient
-            .WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull && t.Status != BlobStatus.Error ? BlobStatus.Zipped : BlobStatus.Error)));
+        logger.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Activity: {activity}");
+        await Task.WhenAll(jobs.Select(job => 
+            job.BlobClient.WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull && t.Status != BlobStatus.Error ? BlobStatus.Zipped : BlobStatus.Error)));
 
-        log.LogInformation($"[Zipper] Tags marked {jobs.Count} blobs. Status: {(isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)}, Activity: {activity}. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
+        logger.LogInformation($"[Zipper] Tags marked {jobs.Count} blobs. Status: {(isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)}, Activity: {activity}. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
         return isZippedSuccessfull;
     }
 }
