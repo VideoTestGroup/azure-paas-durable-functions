@@ -3,7 +3,7 @@
     "Functions": {
       "commandName": "Project",
       "commandLineArgs": "--port 7209",
-      "launchBrowser": false
+      "workingDirectory": "C:\\Users\\gh1159\\source\\repos\\azure-paas-durable-functions\\Functions"
     }
   }
 }

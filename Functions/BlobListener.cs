@@ -1,5 +1,3 @@
-//using Azure.Messaging.EventGrid;
-//using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
@@ -11,9 +9,8 @@ public class BlobListener
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
-            //[EventGridTrigger] EventGridEvent blobEvent,
         [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
-            string myQueueItem,
+            EventGridItem myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
@@ -34,13 +31,15 @@ public class BlobListener
         {
             container = Consts.FTPContainerName,
             eventGrid = myQueueItem,
-            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
+//            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
         };
 
         logger.LogInformation($"[BlobListener] creating cosmos record log: {log}");
         logger.LogInformation($"[BlobListener] creating cosmos record id: {log.id}");
 
         await fileLogOut.AddAsync(log);
+
+        logger.LogInformation($"[BlobListener] first record was registered{blobName}");
 
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
@@ -88,6 +87,7 @@ public class BlobListener
         }
 
 
+        logger.LogInformation($"[BlobListener] seconed record is about to be registered{blobName}");
         await fileLogOut.AddAsync(new FileLog(blobName, deliveryCount)
         {
             container = Consts.FTPContainerName,
