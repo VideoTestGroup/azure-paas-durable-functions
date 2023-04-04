@@ -1,5 +1,3 @@
-//using Azure.Messaging.EventGrid;
-//using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
@@ -11,9 +9,8 @@ public class BlobListener
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
-            //[EventGridTrigger] EventGridEvent blobEvent,
         [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
-            string myQueueItem,
+            EventGridItem myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
@@ -23,16 +20,26 @@ public class BlobListener
             databaseName: "FilesLog",
             containerName: "files",
             Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
-        ILogger log)
+        ILogger logger)
     {
         //log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
-        log.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
-        string blobName = myQueueItem.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+        logger.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
+        string blobName = myQueueItem.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
 
-        await fileLogOut.AddAsync(new FileLog(blobName){ 
-            container = Consts.FTPContainerName, 
-            eventGrid = myQueueItem
-        });
+
+        FileLog log = new FileLog(blobName, deliveryCount)
+        {
+            container = Consts.FTPContainerName,
+            eventGrid = myQueueItem,
+            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
+        };
+
+        logger.LogInformation($"[BlobListener] creating cosmos record log: {log}");
+        logger.LogInformation($"[BlobListener] creating cosmos record id: {log.id}");
+
+        await fileLogOut.AddAsync(log);
+
+        logger.LogInformation($"[BlobListener] first record was registered{blobName}");
 
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
@@ -41,13 +48,13 @@ public class BlobListener
             var isBlobExist = await blobClient.ExistsAsync();
             if (!isBlobExist.Value)
             {
-                log.LogWarning($"[BlobListener] blob: {blobClient.Name} is not exist so ignore the trigger");
+                logger.LogWarning($"[BlobListener] blob: {blobClient.Name} is not exist so ignore the trigger");
                 return;
             }
         }
         catch (Exception ex)
         {
-            log.LogError(ex, $"[BlobListener] Error check blob: {blobClient.Name} ExistsAsync");
+            logger.LogError(ex, $"[BlobListener] Error check blob: {blobClient.Name} ExistsAsync");
         }
 
         var entityId = new EntityId(nameof(DuplicateBlobs), DuplicateBlobsEntityName);
@@ -57,7 +64,7 @@ public class BlobListener
             duplicatesBlobsState.EntityState.DuplicateBlobsDic != null &&
             duplicatesBlobsState.EntityState.DuplicateBlobsDic.ContainsKey(blobName))
         {
-            log.LogWarning($"[BlobListener] blob: {blobClient.Name} is already handled so ignoring");
+            logger.LogWarning($"[BlobListener] blob: {blobClient.Name} is already handled so ignoring");
             Response<GetBlobTagResult> res = await blobClient.GetTagsAsync();
             var blobTags = new BlobTags(res.Value.Tags);
             blobTags.IsDuplicate = true;
@@ -76,17 +83,22 @@ public class BlobListener
         Response response = await blobClient.WriteTagsAsync(tags);
         if (response.IsError)
         {
-            log.LogError(new EventId(1001), response.ToString());
+            logger.LogError(new EventId(1001), response.ToString());
         }
 
-        await fileLogOut.AddAsync(new FileLog(blobName){ 
-            container = Consts.FTPContainerName, 
+
+        logger.LogInformation($"[BlobListener] seconed record is about to be registered{blobName}");
+        await fileLogOut.AddAsync(new FileLog(blobName, deliveryCount)
+        {
+            container = Consts.FTPContainerName,
             eventGrid = myQueueItem,
-            tags = FileLog.ConvertTags(tags),
-            properties = FileLog.ConvertProperties(props)
+            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId },
+            tags = tags,
+            properties = props
+
         });
 
-        log.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
+        logger.LogInformation($"[BlobListener] BlobTags saved for blob {blobName}, Tags: {tags}");
     }
 
     private static string GetBlobNamespace(string blobName)

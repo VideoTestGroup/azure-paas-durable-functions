@@ -3,6 +3,7 @@
 
 # Azure Functions localsettings file
 **/appsettings.json
+**/local.settings.json
 
 # User-specific files
 *.suo
@@ -265,3 +266,4 @@ __pycache__/
 
 **/net*/
 .DS_Store
+/Functions/local.settings.json
