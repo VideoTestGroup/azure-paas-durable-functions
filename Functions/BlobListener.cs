@@ -34,8 +34,6 @@ public class BlobListener
             eventGrid = myQueueItem
         });
 
-        logger.LogInformation($"[BlobListener] first record was registered{blobName}");
-
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
 
         try
@@ -82,7 +80,6 @@ public class BlobListener
         }
 
 
-        logger.LogInformation($"[BlobListener] seconed record is about to be registered{blobName}");
         await fileLogOut.AddAsync(new FileLog(blobName, deliveryCount)
         {
             container = Consts.FTPContainerName,
