@@ -1,5 +1,7 @@
 //using Azure.Messaging.EventGrid;
 //using Microsoft.Azure.WebJobs.Extensions.EventGrid;
+using Azure.Messaging.EventGrid;
+using Microsoft.Azure.Amqp.Framing;
 using System.Text.RegularExpressions;
 
 namespace ImageIngest.Functions;
@@ -10,9 +12,9 @@ public class BlobListener
     public static string DuplicateBlobsEntityName = Environment.GetEnvironmentVariable("DuplicateBlobsEntityName");
 
     [FunctionName(nameof(BlobListener))]
-    public async Task Run(
-        [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
             string myQueueItem,
+        [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
+            EventGridEvent myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
