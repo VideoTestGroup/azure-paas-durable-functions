@@ -11,7 +11,12 @@ public class BlobListener
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
-        [EventGridTrigger] EventGridEvent blobEvent, 
+            //[EventGridTrigger] EventGridEvent blobEvent,
+        [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection")]
+            string myQueueItem,
+            Int32 deliveryCount,
+            DateTime enqueuedTimeUtc,
+            string messageId,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
         [DurableClient] IDurableClient durableClient,
         [CosmosDB(
@@ -20,12 +25,13 @@ public class BlobListener
             Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
         ILogger log)
     {
-        log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
-        string blobName = blobEvent.Subject.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
+        //log.LogInformation($"[BlobListener] Function triggered on EventGrid topic subscription. Subject: {blobEvent.Subject}, Prefix: {EventGridSubjectPrefix} Details: {blobEvent}");
+        log.LogInformation($"[BlobListener] Function triggered on Service Bus Queue. myQueueItem: {myQueueItem}, deliveryCount: {deliveryCount} enqueuedTimeUtc: {enqueuedTimeUtc}, messageId: {messageId}");
+        string blobName = myQueueItem.Replace(EventGridSubjectPrefix, string.Empty, StringComparison.InvariantCultureIgnoreCase);
 
         await fileLogOut.AddAsync(new FileLog(blobName){ 
             container = Consts.FTPContainerName, 
-            eventGrid = FileLog.ConvertEvent(blobEvent)
+            eventGrid = myQueueItem
         });
 
         BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
@@ -75,7 +81,7 @@ public class BlobListener
 
         await fileLogOut.AddAsync(new FileLog(blobName){ 
             container = Consts.FTPContainerName, 
-            eventGrid = FileLog.ConvertEvent(blobEvent),
+            eventGrid = myQueueItem,
             tags = FileLog.ConvertTags(tags),
             properties = FileLog.ConvertProperties(props)
         });

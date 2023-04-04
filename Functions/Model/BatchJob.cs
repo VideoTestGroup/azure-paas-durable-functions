@@ -6,7 +6,7 @@ public class BatchJob
     private static TimeSpan LeaseDuration => TimeSpan.Parse(Environment.GetEnvironmentVariable("LeaseDuration"));
     
     private readonly Lazy<BlobClient> blobClient;
-    private readonly Lazy<BlobLeaseClient> leaseClient;
+    //private readonly Lazy<BlobLeaseClient> leaseClient;
     private readonly Lazy<MemoryStream> stream;
     public string Name => Tags.Name;
     public BlobClient BlobClient => blobClient.Value;
