@@ -31,10 +31,10 @@ public class BlobListener
         {
             container = Consts.FTPContainerName,
             eventGrid = myQueueItem,
-//            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
+            queueItem = new QueueItem() { deliveryCount = deliveryCount, enqueuedTimeUtc = enqueuedTimeUtc, messageId = messageId }
         };
 
-        var logtxt = JsonConvert.SerializeObject(log, Formatting.Indented);
+        var logtxt = JsonConvert.SerializeObject(log, Formatting.None);
 
         logger.LogInformation($"[BlobListener] creating cosmos record log: {logtxt}");
         logger.LogInformation($"[BlobListener] creating cosmos record id: {log.id}");

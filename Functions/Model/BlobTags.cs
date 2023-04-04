@@ -7,54 +7,63 @@ public class BlobTags
     private IDictionary<string, string> tags = new Dictionary<string, string>();
     public IDictionary<string, string> Tags => tags;
 
+    [DataMember]
     public long Created
     {
         get => tags.GetValue<long>(nameof(Created));
         set => tags[nameof(Created)] = value.ToString();
     }
 
+    [DataMember]
     public long Modified
     {
         get => tags.GetValue<long>(nameof(Modified));
         set => tags[nameof(Modified)] = value.ToString();
     }
 
+    [DataMember]
     public BlobStatus Status
     {
         get => (Enum.TryParse<BlobStatus>(tags[nameof(Status)], true, out BlobStatus status) ? status : BlobStatus.New);
         set => tags[nameof(Status)] = value.ToString();
     }
 
+    [DataMember]
     public string Container
     {
         get => tags.GetValue<string>(nameof(Container));
         set => tags[nameof(Container)] = value;
     }
 
+    [DataMember]
     public string Namespace
     {
         get => tags.GetValue<string>(nameof(Namespace));
         set => tags[nameof(Namespace)] = value;
     }
 
+    [DataMember]
     public string BatchId
     {
         get => tags.TryGetValue(nameof(BatchId), out string batchId) ? batchId : string.Empty;
         set => tags[nameof(BatchId)] = value;
     }
 
+    [DataMember]
     public long Length
     {
         get => tags.GetValue<long>(nameof(Length));
         set => tags[nameof(Length)] = value.ToString();
     }
 
+    [DataMember]
     public string Text
     {
         get => tags.GetValue<string>(nameof(Text));
         set => tags[nameof(Text)] = value;
     }
 
+    [DataMember]
     public bool IsDuplicate
     {
         get => tags.GetValue<string>(nameof(IsDuplicate)) == "1";
