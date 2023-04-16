@@ -41,7 +41,7 @@ public class BlobsCleaner
         await foreach (BlobTags tag in blobContainerClient.QueryByTagsAsync(batchedQuery))
             items.Add(tag);
 
-        log.LogInformation($"[BlobsCleaner] blobContainerClient : {item.BatchId}");
+        //log.LogInformation($"[BlobsCleaner] blobContainerClient : {item.BatchId}");
         //var result = items.GroupBy(x => x.BatchId, x=>x.Namespace).Select(group => new { BatchId = group.Key, Namespace = group.FirstOrDefault() }) .ToList();
         var result = items.GroupBy(x => x.BatchId).Select(group => new { BatchId = group.Key}).ToList();
 
