@@ -39,7 +39,7 @@ public class BlobsCleaner
         
         // TODO: reafactor for best performance
         IDictionary<string, string> batches = new Dictionary<string, string>();
-        await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Batched && t.Modified < DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc()))
+        await foreach (BlobTags tag in blobContainerClient.QueryAsync(t => t.Status == BlobStatus.Batched && t.Modified < DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc()))
             batches[tag.BatchId] = tag.Namespace;     
        
 //         await foreach (BlobTags tag in blobContainerClient.QueryByTagsAsync(batchedQuery))
