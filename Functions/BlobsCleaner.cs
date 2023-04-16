@@ -42,6 +42,8 @@ public class BlobsCleaner
             items.Add(tag);
 
         var result = items.GroupBy(x => x.BatchId, x=>x.Namespace).Select(group => new { BatchId = group.Key, Namespace = group.FirstOrDefault() }) .ToList();
+        log.LogInformation($"[BlobsCleaner] batchedQuery:{batchedQuery}");
+        log.LogInformation($"[BlobsCleaner] result:{result.Count}");
         foreach (var item in result)
         {
              log.LogInformation($"[BlobsCleaner] Retry Batches: {DateTime.Now}, Namespace: {item.Namespace}, BatchId: {item.BatchId}");
@@ -50,7 +52,7 @@ public class BlobsCleaner
             await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
             log.LogInformation($"[BlobsCleaner] Namespace {item.Namespace} and {item.BatchId} Were Batched blobs started successfully");
         }
-        log.LogInformation($"[BlobsCleaner] Batches {result.Count} and files {items.Count} Batch blobs strated successfully");
+        log.LogInformation($"[BlobsCleaner] Batches count: {result.Count} and files count: {items.Count} Batch blobs strated successfully");
     }
 }
 
