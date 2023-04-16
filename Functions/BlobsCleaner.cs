@@ -41,6 +41,7 @@ public class BlobsCleaner
         await foreach (BlobTags tag in blobContainerClient.QueryByTagsAsync(batchedQuery))
             items.Add(tag);
 
+        log.LogInformation($"[BlobsCleaner] blobContainerClient : {item.BatchId}");
         //var result = items.GroupBy(x => x.BatchId, x=>x.Namespace).Select(group => new { BatchId = group.Key, Namespace = group.FirstOrDefault() }) .ToList();
         var result = items.GroupBy(x => x.BatchId).Select(group => new { BatchId = group.Key}).ToList();
 
@@ -48,6 +49,7 @@ public class BlobsCleaner
         log.LogInformation($"[BlobsCleaner] Query result:{result.Count}");
         foreach (var item in result)
         {
+            log.LogInformation($"[BlobsCleaner] Grouped Items: {item}");
             var batch = items.FirstOrDefault(x => x.BatchId == item.BatchId);
             log.LogInformation($"[BlobsCleaner] Retry Batches: {DateTime.Now}, Namespace: {batch.Namespace}, BatchId: {item.BatchId}");
             var activity = new ActivityAction() { Namespace = batch.Namespace , BatchId = item.BatchId };
