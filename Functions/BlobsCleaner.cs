@@ -36,27 +36,22 @@ public class BlobsCleaner
         
         log.LogInformation($"[BlobsCleaner] Start Retry Batched files at blobs: {DateTime.Now}");
         string batchedQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Batched, modifiedTime: DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc());
-        var items = new List<BlobTags>(); //await blobContainerClient.QueryByTagsAsync(batchedQuery);
-       
+        
+        IDictionary<string, string> batches = new Dictionary<string, string>();
         await foreach (BlobTags tag in blobContainerClient.QueryByTagsAsync(batchedQuery))
-            items.Add(tag);
-
-        //log.LogInformation($"[BlobsCleaner] blobContainerClient : {item.BatchId}");
-        //var result = items.GroupBy(x => x.BatchId, x=>x.Namespace).Select(group => new { BatchId = group.Key, Namespace = group.FirstOrDefault() }) .ToList();
-        var result = items.GroupBy(x => x.BatchId).Select(group => new { BatchId = group.Key}).ToList();
+            batches[tag.BatchId] = tag.Namespace;
 
         log.LogInformation($"[BlobsCleaner] Query batchedQuery:{batchedQuery}");
-        log.LogInformation($"[BlobsCleaner] Query result:{result.Count}");
-        foreach (var item in result)
+        log.LogInformation($"[BlobsCleaner] batches: {batches}");
+        foreach (KeyValuePair<string, string> kvp in batches)
         {
-            log.LogInformation($"[BlobsCleaner] Grouped Items: {item}");
-            var batch = items.FirstOrDefault(x => x.BatchId == item.BatchId);
-            log.LogInformation($"[BlobsCleaner] Retry Batches: {DateTime.Now}, Namespace: {batch.Namespace}, BatchId: {item.BatchId}");
-            var activity = new ActivityAction() { Namespace = batch.Namespace , BatchId = item.BatchId };
+            log.LogInformation($"[BlobsCleaner] Batch: {kvp}");
+            log.LogInformation($"[BlobsCleaner] Retry Batches: {DateTime.Now}, BatchId: {kvp.Key}, Namespace: {kvp.Value}");
+            var activity = new ActivityAction() { Namespace = kvp.Value , BatchId = kvp.Key };
             await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
-            log.LogInformation($"[BlobsCleaner] Namespace {batch.Namespace} and {item.BatchId} Were Batched blobs started successfully");
+            log.LogInformation($"[BlobsCleaner] Namespace: {kvp.Value} and BatchId: {kvp.Key} Were Batched blobs started successfully");
         }
-        log.LogInformation($"[BlobsCleaner] Batches count: {result.Count} and files count: {items.Count} Batch blobs strated successfully");
+        log.LogInformation($"[BlobsCleaner] Batches count: {batches.Count} strated successfully");
     }
 }
 
