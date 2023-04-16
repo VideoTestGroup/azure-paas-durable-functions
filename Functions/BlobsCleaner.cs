@@ -41,16 +41,18 @@ public class BlobsCleaner
         await foreach (BlobTags tag in blobContainerClient.QueryByTagsAsync(batchedQuery))
             items.Add(tag);
 
-        var result = items.GroupBy(x => x.BatchId, x=>x.Namespace).Select(group => new { BatchId = group.Key, Namespace = group.FirstOrDefault() }) .ToList();
-        log.LogInformation($"[BlobsCleaner] batchedQuery:{batchedQuery}");
-        log.LogInformation($"[BlobsCleaner] result:{result.Count}");
+        //var result = items.GroupBy(x => x.BatchId, x=>x.Namespace).Select(group => new { BatchId = group.Key, Namespace = group.FirstOrDefault() }) .ToList();
+        var result = items.GroupBy(x => x.BatchId).Select(group => new { BatchId = group.Key}).ToList();
+
+        log.LogInformation($"[BlobsCleaner] Query batchedQuery:{batchedQuery}");
+        log.LogInformation($"[BlobsCleaner] Query result:{result.Count}");
         foreach (var item in result)
         {
-             log.LogInformation($"[BlobsCleaner] Retry Batches: {DateTime.Now}, Namespace: {item.Namespace}, BatchId: {item.BatchId}");
-            //var item = group.FirstOrDefualt();
-            var activity = new ActivityAction() { Namespace = item.Namespace , BatchId = item.BatchId };
+            var batch = items.FirstOrDefault(x => x.BatchId == item.BatchId);
+            log.LogInformation($"[BlobsCleaner] Retry Batches: {DateTime.Now}, Namespace: {batch.Namespace}, BatchId: {item.BatchId}");
+            var activity = new ActivityAction() { Namespace = batch.Namespace , BatchId = item.BatchId };
             await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
-            log.LogInformation($"[BlobsCleaner] Namespace {item.Namespace} and {item.BatchId} Were Batched blobs started successfully");
+            log.LogInformation($"[BlobsCleaner] Namespace {batch.Namespace} and {item.BatchId} Were Batched blobs started successfully");
         }
         log.LogInformation($"[BlobsCleaner] Batches count: {result.Count} and files count: {items.Count} Batch blobs strated successfully");
     }
