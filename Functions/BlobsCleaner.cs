@@ -35,17 +35,20 @@ public class BlobsCleaner
 //         log.LogInformation($"[BlobsCleaner] {deleteCount} duplicate blobs cleaned successfully");
         
         log.LogInformation($"[BlobsCleaner] Start Retry Batched files at blobs: {DateTime.Now}");
-        string batchedQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Batched, modifiedTime: DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc());
+//         string batchedQuery = BlobClientExtensions.BuildTagsQuery(status: BlobStatus.Batched, modifiedTime: DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc())
         
+        // TODO: reafactor for best performance
         IDictionary<string, string> batches = new Dictionary<string, string>();
-        await foreach (BlobTags tag in blobContainerClient.QueryByTagsAsync(batchedQuery))
-            batches[tag.BatchId] = tag.Namespace;
+        await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Batched && t.Modified < DateTime.UtcNow.Subtract(BatchedBlobsRetryThreshold).ToFileTimeUtc()))
+            batches[tag.BatchId] = tag.Namespace;     
+       
+//         await foreach (BlobTags tag in blobContainerClient.QueryByTagsAsync(batchedQuery))
+//             batches[tag.BatchId] = tag.Namespace;
 
-        log.LogInformation($"[BlobsCleaner] Query batchedQuery:{batchedQuery}");
-        log.LogInformation($"[BlobsCleaner] batches: {batches}");
+//         log.LogInformation($"[BlobsCleaner] Query batchedQuery:{batchedQuery}");
+        log.LogInformation($"[BlobsCleaner] batches count: {batches.Count}");
         foreach (KeyValuePair<string, string> kvp in batches)
         {
-            log.LogInformation($"[BlobsCleaner] Batch: {kvp}");
             log.LogInformation($"[BlobsCleaner] Retry Batches: {DateTime.Now}, BatchId: {kvp.Key}, Namespace: {kvp.Value}");
             var activity = new ActivityAction() { Namespace = kvp.Value , BatchId = kvp.Key };
             await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
