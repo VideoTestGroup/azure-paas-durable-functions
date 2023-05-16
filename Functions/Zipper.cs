@@ -23,7 +23,7 @@ public static class Zipper
         string query = $"Status = 'Batched' AND BatchId = '{activity.BatchId}'";
 
         List<TaggedBlobItem> blobs = new List<TaggedBlobItem>();
-        await foreach (TaggedBlobItem taggedBlobItem in client.FindBlobsByTagsAsync(query))
+        await foreach (TaggedBlobItem taggedBlobItem in ftpClient.FindBlobsByTagsAsync(query))
         {
             BlobTags tags = new BlobTags(taggedBlobItem);
             BatchJob job = new BatchJob(tags);
