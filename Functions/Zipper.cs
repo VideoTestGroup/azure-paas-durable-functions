@@ -20,11 +20,12 @@ public static class Zipper
         logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity}");
         List<BatchJob> jobs = new List<BatchJob>();
 
-        await foreach (BlobTags tags in ftpClient.QueryAsync(t =>
-            t.Status == BlobStatus.Batched &&
-            t.BatchId == activity.BatchId &&
-            t.Namespace == activity.Namespace))
+        string query = $"Status = 'Batched' AND BatchId = '{activity.BatchId}'";
+
+        List<TaggedBlobItem> blobs = new List<TaggedBlobItem>();
+        await foreach (TaggedBlobItem taggedBlobItem in client.FindBlobsByTagsAsync(query))
         {
+            BlobTags tags = new BlobTags(taggedBlobItem);
             BatchJob job = new BatchJob(tags);
             jobs.Add(job);
         }
