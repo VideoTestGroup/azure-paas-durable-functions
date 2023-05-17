@@ -13,7 +13,7 @@ public class Collector
     [FunctionName(nameof(Collector))]
     public async Task Run(
         [TimerTrigger("*/%CollectorTimer% * * * * *")] TimerInfo myTimer,
-        [ServiceBus("batches", Connection = "ServiceBusConnectionString")] IAsyncCollector<string> collector,
+        [ServiceBus("batches", Connection = "ServiceBusConnection")] IAsyncCollector<string> collector,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
     {
