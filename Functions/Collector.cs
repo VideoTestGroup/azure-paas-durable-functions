@@ -11,10 +11,9 @@ public class Collector
             TimeSpan.TryParse(Environment.GetEnvironmentVariable("BlobOutdatedThreshold"), out TimeSpan span) ? span : TimeSpan.FromMinutes(5);
 
     [FunctionName(nameof(Collector))]
-    [return: ServiceBus("batches", Connection = "ServiceBusConnection")]
     public async Task Run(
-       // [TimerTrigger("*/%CollectorTimer% * * * * *")] TimerInfo myTimer,
-       // [DurableClient] IDurableOrchestrationClient starter,
+        [TimerTrigger("*/%CollectorTimer% * * * * *")] TimerInfo myTimer,
+        [ServiceBus("batches", Connection = "ServiceBusConnectionString")] IAsyncCollector<string> collector,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
     {
@@ -66,7 +65,8 @@ public class Collector
 
            // var activity = new ActivityAction() { Namespace = @namespace, BatchId = batchId };
             // await starter.StartNewAsync(nameof(ZipperOrchestrator), activity);
-            return batchId;
+            await collector.AddAsync(batchId);
+            await collector.FlushAsync();
         }
         catch (Exception ex)
         {
