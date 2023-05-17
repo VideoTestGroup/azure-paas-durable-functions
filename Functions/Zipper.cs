@@ -7,7 +7,8 @@ public static class Zipper
     private static TimeSpan LeaseDuration => TimeSpan.Parse(Environment.GetEnvironmentVariable("LeaseDuration"));
 
     [FunctionName(nameof(Zipper))]
-    public static async Task<bool?> Run(
+  //  public static async Task<bool?> Run(
+      public async Task Run(
      //   [ActivityTrigger] ActivityAction activity,
         [ServiceBusTrigger("batches", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
             string myQueueItem,
