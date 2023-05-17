@@ -11,7 +11,7 @@ public class ZipperOrchestrator
             [DurableClient] IDurableOrchestrationClient starter,
         ILogger log)
     {
-        log.LogInformation($"[ZipperOrchestrator] OrchestrationTrigger triggered Function for InstanceId {context.InstanceId}");
+        log.LogInformation($"[ZipperOrchestrator] OrchestrationTrigger triggered Function for InstanceId ");
         var activity = new ActivityAction() { BatchId = myQueueItem };
 
         log.LogInformation($"[ZipperOrchestrator] Zipping files for activity: {activity}");
