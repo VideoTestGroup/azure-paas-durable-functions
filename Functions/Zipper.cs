@@ -8,7 +8,12 @@ public static class Zipper
 
     [FunctionName(nameof(Zipper))]
     public static async Task<bool?> Run(
-        [ActivityTrigger] ActivityAction activity,
+     //   [ActivityTrigger] ActivityAction activity,
+        [ServiceBusTrigger("batches", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
+            string myQueueItem,
+            Int32 deliveryCount,
+            DateTime enqueuedTimeUtc,
+            string messageId,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient ftpClient,
         [Blob(Consts.ZipContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
         [CosmosDB(
@@ -17,10 +22,10 @@ public static class Zipper
             Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
         ILogger logger)
     {
-        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity} KD");
+        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:  KD");
         List<BatchJob> jobs = new List<BatchJob>();
 
-        string query = $"Status = 'Batched' AND BatchId = '{activity.BatchId}'";
+        string query = $"Status = 'Batched' AND BatchId = '{myQueueItem}'";
 
         List<TaggedBlobItem> blobs = new List<TaggedBlobItem>();
         await foreach (TaggedBlobItem taggedBlobItem in ftpClient.FindBlobsByTagsAsync(query))
