@@ -122,14 +122,14 @@ public static class Zipper
         catch (Exception ex)
         {
             isZippedSuccessfull = false;
-            logger.LogError(ex, $"{ex.Message} ActivityDetails: {activity}");
+            logger.LogError(ex, $"{ex.Message} ActivityDetails: ");
         }
 
-        logger.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Activity: {activity}");
+        logger.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Activity: ");
         await Task.WhenAll(jobs.Select(job => 
             job.BlobClient.WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull && t.Status != BlobStatus.Error ? BlobStatus.Zipped : BlobStatus.Error)));
 
-        logger.LogInformation($"[Zipper] Tags marked {jobs.Count} blobs. Status: {(isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)}, Activity: {activity}. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
+   //     logger.LogInformation($"[Zipper] Tags marked {jobs.Count} blobs. Status: {(isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)}, Activity: {activity}. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
         return isZippedSuccessfull;
     }
 }
