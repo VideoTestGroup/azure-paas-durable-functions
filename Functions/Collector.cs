@@ -17,7 +17,7 @@ public class Collector
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient containerClient,
         ILogger log)
     {
-        log.LogInformation($"[Collector] executed at: {DateTime.Now}");
+        log.LogInformation($"[Collector] executed at: {DateTime.Now} KD");
         await Task.WhenAll(Namespaces.Select(@namespace => CollectorRun(@namespace, containerClient, collector, log)));
     }
 
