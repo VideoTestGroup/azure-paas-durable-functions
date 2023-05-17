@@ -17,7 +17,7 @@ public static class Zipper
             Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
         ILogger logger)
     {
-        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity}");
+        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity: {activity} KD");
         List<BatchJob> jobs = new List<BatchJob>();
 
         string query = $"Status = 'Batched' AND BatchId = '{activity.BatchId}'";
