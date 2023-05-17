@@ -9,7 +9,7 @@ namespace ImageIngest.Functions
         [FunctionName("TestQueue")]
         public static async Task Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [ServiceBus("camsftpfr-prod", Connection = "ServiceBusConnection")] IAsyncCollector<string> output,
+            [ServiceBus("camsftpfr", Connection = "ServiceBusConnection")] IAsyncCollector<string> output,
             ILogger log)
         {
             string name = req.Query["name"];
