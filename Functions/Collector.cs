@@ -18,10 +18,10 @@ public class Collector
         ILogger log)
     {
         log.LogInformation($"[Collector] executed at: {DateTime.Now}");
-        await Task.WhenAll(Namespaces.Select(@namespace => CollectorRun(@namespace, containerClient, starter, log)));
+        await Task.WhenAll(Namespaces.Select(@namespace => CollectorRun(@namespace, containerClient, log)));
     }
 
-    public async Task CollectorRun(string @namespace, BlobContainerClient containerClient, IDurableOrchestrationClient starter, ILogger log)
+    public async Task CollectorRun(string @namespace, BlobContainerClient containerClient, ILogger log)
     {
         List<BlobTags> tags = new List<BlobTags>();
         bool hasOutdateBlobs = false;
