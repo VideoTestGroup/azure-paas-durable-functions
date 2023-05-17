@@ -1,4 +1,4 @@
-name: Deploy project to function app lpr-cams-func-prod with a Linux environment
+name: Deploy project to function app lpr-cams-func-prod with a Linux environment.
 
 on:
   [push]
