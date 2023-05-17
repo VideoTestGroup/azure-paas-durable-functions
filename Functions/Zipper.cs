@@ -85,7 +85,7 @@ public static class Zipper
                         }
                         catch (Exception ex)
                         {
-                            logger.LogError(ex, $"[Zipper] Error in job {job.Name}, ActivityDetails: {activity}, exception: {ex.Message}");
+                            logger.LogError(ex, $"[Zipper] Error in job {job.Name}, ActivityDetails: , exception: {ex.Message}");
                             job.Tags.Status = BlobStatus.Error;
                             job.Tags.Text = "Exception in create blob part in zip";
                         }
@@ -94,9 +94,9 @@ public static class Zipper
                     zip.Save(zipStream);
                 }
 
-                logger.LogInformation($"[Zipper] Creating zip stream: {activity.BatchId}.zip");
+                logger.LogInformation($"[Zipper] Creating zip stream: {myQueueItem}.zip");
                 zipStream.Position = 0;
-                var zipBlobClient = zipClient.GetBlobClient($"{activity.BatchId}.zip");
+                var zipBlobClient = zipClient.GetBlobClient($"{myQueueItem}.zip");
 
                 try
                 {
@@ -106,17 +106,17 @@ public static class Zipper
                     // So we check if the blob is already exists, if true we ignore this execution with the batchId.
                     if (isExist.Value)
                     {
-                        logger.LogWarning($"[Zipper] Zip with batchId {activity.BatchId} already exists. ignoring this execution, ActivityDetails: {activity}");
+                        logger.LogWarning($"[Zipper] Zip with batchId {myQueueItem} already exists. ignoring this execution, ActivityDetails: ");
                         return null;
                     }
                 }
                 catch (Exception ex )
                 {
-                    logger.LogError(ex, $"[Zipper] Error check zip: {activity.BatchId} ExistsAsync");
+                    logger.LogError(ex, $"[Zipper] Error check zip: {myQueueItem} ExistsAsync");
                 }
 
-                await zipClient.GetBlobClient($"{activity.BatchId}.zip").UploadAsync(zipStream);
-                logger.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: {activity}");
+                await zipClient.GetBlobClient($"{myQueueItem}.zip").UploadAsync(zipStream);
+                logger.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: ");
             }
         }
         catch (Exception ex)
