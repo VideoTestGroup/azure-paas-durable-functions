@@ -37,7 +37,7 @@ public static class Zipper
 
         if (jobs.Count < 1)
         {
-            logger.LogWarning($"[Zipper] No blobs found for activity: {activity}");
+            logger.LogWarning($"[Zipper] No blobs found for activity: ");
             return null;
         }
 
