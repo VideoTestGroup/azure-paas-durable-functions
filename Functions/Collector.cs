@@ -33,7 +33,7 @@ public class Collector
         {
             await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Pending && t.Namespace == @namespace))
             {
-                log.LogInformation($"namespace:{namespace} blob status {BlobStatus}");           
+                log.LogInformation($"namespace:{@namespace} blob status {BlobStatus}");           
                 totalSize += tag.Length;
                 hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
                 tags.Add(tag);
