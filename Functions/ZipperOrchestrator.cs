@@ -8,16 +8,18 @@ public class ZipperOrchestrator
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
+            [DurableClient] IDurableOrchestrationClient starter,
         ILogger log)
     {
         log.LogInformation($"[ZipperOrchestrator] OrchestrationTrigger triggered Function for InstanceId {context.InstanceId}");
         var activity = new ActivityAction() { BatchId = myQueueItem };
 
         log.LogInformation($"[ZipperOrchestrator] Zipping files for activity: {activity}");
-        bool? isSuccessfull = await context.CallActivityAsync<bool?>(nameof(Zipper), activity);
-        if (isSuccessfull.HasValue)
-        {
-            log.LogInformation($"[ZipperOrchestrator] Finish zipping files for acitivty: {activity}. result: {isSuccessfull}");
-        }
+     //   bool? isSuccessfull = await context.CallActivityAsync<bool?>(nameof(Zipper), activity);
+        await starter.StartNewAsync(nameof(Zipper), activity);
+     //   if (isSuccessfull.HasValue)
+     //   {
+     //       log.LogInformation($"[ZipperOrchestrator] Finish zipping files for acitivty: {activity}. result: {isSuccessfull}");
+     //   }
     }
 }
