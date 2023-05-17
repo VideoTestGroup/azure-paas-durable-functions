@@ -9,7 +9,7 @@ public class BlobListener
 
     [FunctionName(nameof(BlobListener))]
     public async Task Run(
-        [ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
+        [ServiceBusTrigger("camsftpfr-prod", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
             EventGridItem myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
