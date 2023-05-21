@@ -74,7 +74,7 @@ namespace ImageIngest.Functions;
         if (jobs.Count < 1)
         {
             logger.LogWarning($"[Zipper] No blobs found for activity: ");
-            return ;//null;
+            return null;
         }
 
         // download file streams
@@ -175,7 +175,7 @@ namespace ImageIngest.Functions;
 
             logger.LogInformation($"[Zipper] files DELETED {jobs.Count} blobs. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
 
-            //return isZippedSuccessfull;
+            return isZippedSuccessfull;
 
         }
         catch (Exception ex)
@@ -184,7 +184,7 @@ namespace ImageIngest.Functions;
             isZippedSuccessfull = false;
             logger.LogError(ex, $"[Zipper] failed updating ZIPPED tag and deleting the files {ex.Message} ActivityDetails: ");
         }
-        //return isZippedSuccessfull;
+        return isZippedSuccessfull;
 
     }
 }
