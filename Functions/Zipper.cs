@@ -27,7 +27,8 @@ public static class Zipper
             Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
         ILogger logger)
     {
-        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:  ");
+        //logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:  ");
+        logger.LogInformation($"[Zipper] started:  ");
         List<BatchJob> jobs = new List<BatchJob>();
         List<TaggedBlobItem> blobs = new List<TaggedBlobItem>();
 
