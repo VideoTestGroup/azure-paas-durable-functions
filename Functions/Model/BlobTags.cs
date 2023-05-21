@@ -97,6 +97,15 @@ public class BlobTags
         Name = blobItem.Name;
     }
 
+    //achi
+    public BlobTags(IDictionary<string,string> Tags, string BlobName)
+    {
+        Initialize();
+        Tags?.ToList()?.ForEach(x => tags[x.Key] = x.Value);
+        Name = BlobName;
+    }
+
+
     public BlobTags(BlobProperties props, BlobClient client)
     {
         Initialize();
