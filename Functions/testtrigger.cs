@@ -5,7 +5,7 @@ namespace ImageIngest.Functions {
 public static class BatchProcessorFunction { 
 [FunctionName("BatchProcessorFunction")] 
 public static async Task RunAsync( 
-[ServiceBusTrigger("batches", Connection = "ServiceBusConnection", AutoCompleteMessages=true)] string message,
+[ServiceBusTrigger("camsftpfr", Connection = "ServiceBusConnection", AutoCompleteMessages=true)] string message,
 ILogger logger) { 
 logger.LogInformation($"Received batch message: {message}");
 // Process the batch message asynchronously here 
