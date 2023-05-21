@@ -3,16 +3,16 @@ using Azure.Storage.Blobs.Models;
 using Ionic.Zip;
 
 namespace ImageIngest.Functions;
-public static class Zipper
-// public class Zipper
+//public static class Zipper
+ public class Zipper
 {
     private static string AzureWebJobsFTPStorage => Environment.GetEnvironmentVariable("AzureWebJobsFTPStorage");
     private static TimeSpan LeaseDuration => TimeSpan.Parse(Environment.GetEnvironmentVariable("LeaseDuration"));
 
     [FunctionName(nameof(Zipper))]
-    public static async Task<bool?> Run(
+   // public static async Task<bool?> Run(
    // public static async Task Run(
-   //   public async Task Run(
+      public async Task<bool?> Run(
      //   [ActivityTrigger] ActivityAction activity,
         [ServiceBusTrigger("batches", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
             TagBatchQueueItem myQueueItem,
