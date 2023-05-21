@@ -1,4 +1,6 @@
-﻿using Ionic.Zip;
+using Azure;
+using Azure.Storage.Blobs.Models;
+using Ionic.Zip;
 
 namespace ImageIngest.Functions;
 public static class Zipper
@@ -13,7 +15,7 @@ public static class Zipper
    //   public async Task Run(
      //   [ActivityTrigger] ActivityAction activity,
         [ServiceBusTrigger("batches", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
-            string myQueueItem,
+            TagBatchQueueItem myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
@@ -25,18 +27,48 @@ public static class Zipper
             Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
         ILogger logger)
     {
-        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:  KD");
+        logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:  ");
         List<BatchJob> jobs = new List<BatchJob>();
-
-        string query = $"Status = 'Batched' AND BatchId = '{myQueueItem}'";
-
         List<TaggedBlobItem> blobs = new List<TaggedBlobItem>();
-        await foreach (TaggedBlobItem taggedBlobItem in ftpClient.FindBlobsByTagsAsync(query))
+
+
+
+        foreach (var FileName in myQueueItem.FileNames)
         {
-            BlobTags tags = new BlobTags(taggedBlobItem);
+
+            // Get a reference to the blob by its name
+            BlobClient blobClient = ftpClient.GetBlobClient(FileName);
+
+            // Fetch the blob properties
+            BlobProperties blobProperties = await blobClient.GetPropertiesAsync();
+
+            // Access the tags
+            // Access the tags
+            IDictionary<string, string> metadata = blobProperties.Metadata;
+
+            // Convert the metadata to Dictionary<string, string>
+            Dictionary<string, string> Blobtags = new Dictionary<string, string>(metadata);
+
+
+
+            BlobTags tags = new BlobTags(metadata, FileName);
             BatchJob job = new BatchJob(tags);
             jobs.Add(job);
         }
+
+
+        //string query = $"Status = 'Batched' AND BatchId = '{myQueueItem}'";
+
+        //await foreach (TaggedBlobItem taggedBlobItem in ftpClient.FindBlobsByTagsAsync(query))
+        //{
+        //    BlobTags tags = new BlobTags(taggedBlobItem);
+        //    BatchJob job = new BatchJob(tags);
+        //    jobs.Add(job);
+        //}
+
+
+
+
 
         if (jobs.Count < 1)
         {
@@ -129,10 +161,29 @@ public static class Zipper
         }
 
         logger.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Activity: ");
-        await Task.WhenAll(jobs.Select(job => 
-            job.BlobClient.WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull && t.Status != BlobStatus.Error ? BlobStatus.Zipped : BlobStatus.Error)));
 
-   //     logger.LogInformation($"[Zipper] Tags marked {jobs.Count} blobs. Status: {(isZippedSuccessfull ? BlobStatus.Zipped : BlobStatus.Error)}, Activity: {activity}. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
+        try
+        {
+            await Task.WhenAll(jobs.Select(job =>
+           job.BlobClient.WriteTagsAsync(job.Tags, t => t.Status = isZippedSuccessfull && t.Status != BlobStatus.Error ? BlobStatus.Zipped : BlobStatus.Error)));
+
+            //Achi delete the files
+            await Task.WhenAll(jobs.Select(job =>
+                job.BlobClient.DeleteAsync()));
+
+
+            logger.LogInformation($"[Zipper] files DELETED {jobs.Count} blobs. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
+
+            return isZippedSuccessfull;
+
+        }
+        catch (Exception ex)
+        {
+
+            isZippedSuccessfull = false;
+            logger.LogError(ex, $"[Zipper] failed updating ZIPPED tag and deleting the files {ex.Message} ActivityDetails: ");
+        }
         return isZippedSuccessfull;
+
     }
 }
