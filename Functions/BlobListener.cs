@@ -15,7 +15,7 @@ public class BlobListener
             DateTime enqueuedTimeUtc,
             string messageId,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient blobContainerClient,
-        [DurableClient] IDurableClient durableClient,
+        //[DurableClient] IDurableClient durableClient,
         [CosmosDB(
             databaseName: "FilesLog",
             containerName: "files",
