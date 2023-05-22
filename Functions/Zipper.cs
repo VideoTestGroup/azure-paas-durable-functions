@@ -57,12 +57,13 @@ namespace ImageIngest.Functions;
 
 
             BlobTags tags = new BlobTags(metadata, FileName);
+            tags.Container = myQueueItem.Container;
             BatchJob job = new BatchJob(tags);
             jobs.Add(job);
         }
 
 
-        //string query = $"Status = 'Batched' AND BatchId = '{myQueueItem}'";
+        //string query = $"Status = 'Batched' AND BatchId = '{myQueueItem.BatchId}'";
 
         //await foreach (TaggedBlobItem taggedBlobItem in ftpClient.FindBlobsByTagsAsync(query))
         //{
@@ -134,9 +135,9 @@ namespace ImageIngest.Functions;
                     zip.Save(zipStream);
                 }
 
-                logger.LogInformation($"[Zipper] Creating zip stream: {myQueueItem}.zip");
+                logger.LogInformation($"[Zipper] Creating zip stream: {myQueueItem.BatchId}.zip");
                 zipStream.Position = 0;
-                var zipBlobClient = zipClient.GetBlobClient($"{myQueueItem}.zip");
+                var zipBlobClient = zipClient.GetBlobClient($"{myQueueItem.BatchId}.zip");
 
                 try
                 {
@@ -146,16 +147,16 @@ namespace ImageIngest.Functions;
                     // So we check if the blob is already exists, if true we ignore this execution with the batchId.
                     if (isExist.Value)
                     {
-                        logger.LogWarning($"[Zipper] Zip with batchId {myQueueItem} already exists. ignoring this execution, ActivityDetails: ");
+                        logger.LogWarning($"[Zipper] Zip with batchId {myQueueItem.BatchId} already exists. ignoring this execution, ActivityDetails: ");
                         return;// null;
                     }
                 }
                 catch (Exception ex )
                 {
-                    logger.LogError(ex, $"[Zipper] Error check zip: {myQueueItem} ExistsAsync");
+                    logger.LogError(ex, $"[Zipper] Error check zip: {myQueueItem.BatchId} ExistsAsync");
                 }
 
-                await zipClient.GetBlobClient($"{myQueueItem}.zip").UploadAsync(zipStream);
+                await zipClient.GetBlobClient($"{myQueueItem.BatchId}.zip").UploadAsync(zipStream);
                 logger.LogInformation($"[Zipper] CopyToAsync zip file zipStream: {zipStream.Length}, activity: ");
             }
         }
