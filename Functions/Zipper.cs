@@ -14,19 +14,23 @@ namespace ImageIngest.Functions;
     public static async Task<bool?> Run(
    //   public async Task<bool?> Run(
      //   [ActivityTrigger] ActivityAction activity,
-        [ServiceBusTrigger("batches", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
+        [ServiceBusTrigger("batches", Connection = "ServiceBusConnection")]
+//               [ServiceBusTrigger("batches", Connection = "ServiceBusConnection", AutoCompleteMessages=true)]
             TagBatchQueueItem myQueueItem,
             Int32 deliveryCount,
             DateTime enqueuedTimeUtc,
             string messageId,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient ftpClient,
         [Blob(Consts.ZipContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
-        [CosmosDB(
-            databaseName: "FilesLog",
-            containerName: "files",
-            Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
-        ILogger logger)
+        //[CosmosDB(
+        //    databaseName: "FilesLog",
+       //     containerName: "files",
+       //     Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
+       ILogger logger
+        )
     {
+       
+       
         //logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:  ");
         logger.LogInformation($"[Zipper] started:  ");
         List<BatchJob> jobs = new List<BatchJob>();
