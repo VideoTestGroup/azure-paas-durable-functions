@@ -22,10 +22,10 @@ namespace ImageIngest.Functions;
             string messageId,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient ftpClient,
         [Blob(Consts.ZipContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
-        //[CosmosDB(
-        //    databaseName: "FilesLog",
-       //     containerName: "files",
-       //     Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
+        [CosmosDB(
+            databaseName: "FilesLog",
+            containerName: "files",
+            Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
        ILogger logger
         )
     {
