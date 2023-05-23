@@ -22,65 +22,26 @@ namespace ImageIngest.Functions;
             string messageId,
         [Blob(Consts.FTPContainerName, Connection = "AzureWebJobsFTPStorage")] BlobContainerClient ftpClient,
         [Blob(Consts.ZipContainerName, Connection = "AzureWebJobsZipStorage")] BlobContainerClient zipClient,
-        [CosmosDB(
-            databaseName: "FilesLog",
-            containerName: "files",
-            Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
+        // [CosmosDB(
+        //     databaseName: "FilesLog",
+        //     containerName: "files",
+        //     Connection = "CosmosDBConnection")]IAsyncCollector<FileLog> fileLogOut,
        ILogger logger
         )
     {
-       
-       
-        //logger.LogInformation($"[Zipper] ActivityTrigger trigger function Processed blob\n activity:  ");
-        logger.LogInformation($"[Zipper] started:  ");
+        logger.LogInformation($"[Zipper] Service Bus trigger function Processed blobs myQueueItem: {myQueueItem}");
         List<BatchJob> jobs = new List<BatchJob>();
         List<TaggedBlobItem> blobs = new List<TaggedBlobItem>();
 
-
-
-        foreach (var FileName in myQueueItem.FileNames)
+        foreach (BlobTags tags in myQueueItem.Tags)
         {
-
-            // Get a reference to the blob by its name
-            BlobClient blobClient = ftpClient.GetBlobClient(FileName);
-
-            // Fetch the blob properties
-            BlobProperties blobProperties = await blobClient.GetPropertiesAsync();
-
-            // Access the tags
-            // Access the tags
-            IDictionary<string, string> metadata = blobProperties.Metadata;
-
-            // Convert the metadata to Dictionary<string, string>
-            Dictionary<string, string> Blobtags = new Dictionary<string, string>(metadata);
-
-
-
-            BlobTags tags = new BlobTags(metadata, FileName);
             tags.Container = myQueueItem.Container;
             BatchJob job = new BatchJob(tags);
             jobs.Add(job);
         }
 
-
-        //string query = $"Status = 'Batched' AND BatchId = '{myQueueItem.BatchId}'";
-
-        //await foreach (TaggedBlobItem taggedBlobItem in ftpClient.FindBlobsByTagsAsync(query))
-        //{
-        //    BlobTags tags = new BlobTags(taggedBlobItem);
-        //    BatchJob job = new BatchJob(tags);
-        //    jobs.Add(job);
-        //}
-
-
-
-
-
-        if (jobs.Count < 1)
-        {
-            logger.LogWarning($"[Zipper] No blobs found for activity: ");
-            return;// null;
-        }
+        if (jobs.Count < 1) //Must throw for the Service Bus retry mechanism
+            throw new ArgumentOutOfRangeException("myQueueItem", $"[Zipper] No blobs found for activity: ");
 
         // download file streams
         await Task.WhenAll(jobs.Select(job => job.BlobClient.DownloadToAsync(job.Stream)
@@ -104,24 +65,24 @@ namespace ImageIngest.Functions;
                                 logger.LogError($"[Zipper] Package zip Cannot compress part, no stream created: {job}");
                                 job.Tags.Status = BlobStatus.Error;
                                 job.Tags.Text = "Zip failed, No stream downloaded";
-                                FileLog log = new FileLog(job.Name, 99)
-                                {
-                                    tags = job.Tags,
-                                    container = job.Tags.Container,
-                                    message = job.Tags.Text
-                                };
-                                await fileLogOut.AddAsync(log);
+                                // FileLog log = new FileLog(job.Name, 99)
+                                // {
+                                //     tags = job.Tags,
+                                //     container = job.Tags.Container,
+                                //     message = job.Tags.Text
+                                // };
+                                // await fileLogOut.AddAsync(log);
                                 continue;
                             }
 
                             job.Stream.Position = 0;
                             zip.AddEntry(job.Name, job.Stream);
-                            FileLog log1 = new FileLog(job.Name, 99)
-                            {
-                                tags = job.Tags,
-                                container = job.Tags.Container,
-                            };
-                            await fileLogOut.AddAsync(log1);
+                            // FileLog log1 = new FileLog(job.Name, 99)
+                            // {
+                            //     tags = job.Tags,
+                            //     container = job.Tags.Container,
+                            // };
+                            // await fileLogOut.AddAsync(log1);
 
                         }
                         catch (Exception ex)
@@ -139,21 +100,14 @@ namespace ImageIngest.Functions;
                 zipStream.Position = 0;
                 var zipBlobClient = zipClient.GetBlobClient($"{myQueueItem.BatchId}.zip");
 
-                try
-                {
-                    var isExist = await zipBlobClient.ExistsAsync();
+                var isExist = await zipBlobClient.ExistsAsync();
 
-                    // Sometimes azure trigger the same batchId (right now dont know why).
-                    // So we check if the blob is already exists, if true we ignore this execution with the batchId.
-                    if (isExist.Value)
-                    {
-                        logger.LogWarning($"[Zipper] Zip with batchId {myQueueItem.BatchId} already exists. ignoring this execution, ActivityDetails: ");
-                        return;// null;
-                    }
-                }
-                catch (Exception ex )
+                // Sometimes azure trigger the same batchId (right now dont know why).
+                // So we check if the blob is already exists, if true we ignore this execution with the batchId.
+                if (isExist.Value)
                 {
-                    logger.LogError(ex, $"[Zipper] Error check zip: {myQueueItem.BatchId} ExistsAsync");
+                    logger.LogWarning($"[Zipper] Zip with batchId {myQueueItem.BatchId} already exists. ignoring this execution, ActivityDetails: ");
+                    return;// null;
                 }
 
                 await zipClient.GetBlobClient($"{myQueueItem.BatchId}.zip").UploadAsync(zipStream);
@@ -165,8 +119,6 @@ namespace ImageIngest.Functions;
             isZippedSuccessfull = false;
             logger.LogError(ex, $"{ex.Message} ActivityDetails: ");
         }
-
-        logger.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Activity: ");
 
         try
         {
@@ -180,16 +132,14 @@ namespace ImageIngest.Functions;
 
             logger.LogInformation($"[Zipper] files DELETED {jobs.Count} blobs. Files: {string.Join(",", jobs.Select(t => $"{t.Name} ({t.Tags.Length.Bytes2Megabytes()}MB)"))}");
 
-            return;// isZippedSuccessfull;
+            if(!isZippedSuccessfull)
+                throw new Exception($"[Zipper] Unsuccessfull zipping process, the files will be marked in Status=Error, Details: {myQueueItem}");
 
+            logger.LogInformation($"[Zipper] Zip file completed, post creation marking blobs. Details: {myQueueItem}");
         }
-        catch (Exception ex)
-        {
-
-            isZippedSuccessfull = false;
-            logger.LogError(ex, $"[Zipper] failed updating ZIPPED tag and deleting the files {ex.Message} ActivityDetails: ");
+        catch (Exception ex) 
+        { // Must throw exception for the Service Bus
+            throw ex;
         }
-        return;// isZippedSuccessfull;
-
     }
 }

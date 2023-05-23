@@ -2,16 +2,6 @@ namespace ImageIngest.Functions.Extensions;
 
 public static class BlobClientExtensions
 {
-    public static async IAsyncEnumerable<BlobTags> QueryAsync(this BlobContainerClient client, Func<BlobTags, bool> predicate)
-    {
-        await foreach (BlobItem blob in client.GetBlobsAsync(BlobTraits.Tags))
-        {
-            BlobTags tags = new BlobTags(blob);
-            if (predicate(tags))
-                yield return tags;
-        }
-    }
-
     public static async IAsyncEnumerable<BlobTags> QueryByTagsAsync(this BlobContainerClient client, string query)
     {
         await foreach (var blob in client.FindBlobsByTagsAsync(query))

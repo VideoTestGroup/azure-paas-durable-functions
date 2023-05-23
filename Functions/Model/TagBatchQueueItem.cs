@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ImageIngest.Functions.Model
 {
-    // this is the class that BlobListener insert into the queue, to be consumed by the zipper function
+    // this is the class that Collector inserts into the queue, to be consumed by the zipper function
     public class TagBatchQueueItem
     {
         public string Namespace { get; set; } = "default";
@@ -15,7 +15,7 @@ namespace ImageIngest.Functions.Model
 
         public string Container { get; set; }
 
-        public List<string> FileNames {get;set; }
+        public BlobTags[] Tags {get;set; }
 
     }
    
