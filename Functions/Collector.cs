@@ -28,7 +28,9 @@ public class Collector
     public async Task CollectorRun(string @namespace, BlobContainerClient containerClient, IAsyncCollector<TagBatchQueueItem> collector, ILogger log)
     {
         List<BlobTags> tags = new List<BlobTags>();
-        bool hasOutdateBlobs = false;
+        List<BlobTags> pageItems = new List<BlobTags>();
+
+        // bool hasOutdateBlobs = false;
         long totalSize = 0;
         long TotalBatches = 0;
 
@@ -36,77 +38,55 @@ public class Collector
 
         try
         {
-            string query = $"Status eq 'Pending' AND Namespace eq '{@namespace}'";
+            string query = $"Status = 'Pending' AND Namespace = '{@namespace}'";
             log.LogInformation($"[Collector] Query: {query}");
-            IAsyncEnumerable<BlobTags> allBlobs = containerClient.QueryByTagsAsync(query);
-            await foreach (BlobTags tag in allBlobs)
+    
+            await foreach (var page in containerClient.FindBlobsByTagsAsync(query).AsPages())
             {
-                if (TotalBatches > MaxZipsPerExecution)
-                    break;
+                pageItems.AddRange(page.Values.Select(t => new BlobTags(t)));
 
-                totalSize += tag.Length;
-                hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
-                tags.Add(tag);
-
-
-                if (totalSize.Bytes2Megabytes() > ZipBatchMaxSizeMB)
+                foreach (BlobTags tag in pageItems)
                 {
+                    totalSize += tag.Length;
+                    tags.Add(tag);
 
-                    // DO
+                    if (totalSize.Bytes2Megabytes() > ZipBatchMaxSizeMB)
+                    {
+                        // DO
+                        log.LogInformation($"[Collector {@namespace}] found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchMinSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+                        
+                        // Create batch id
+                        string batchId = ActivityAction.CreateBatchId(@namespace, tags.Count);
 
-                    log.LogInformation($"[Collector {@namespace}] found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchMinSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
-                    
-                    // Create batch id
-                    string batchId = ActivityAction.CreateBatchId(@namespace, tags.Count);
+                        // Mark blobs as batched with batchId
+                        await Task.WhenAll(tags.Select(tag =>
+                            new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, t =>
+                            {
+                                t.Status = BlobStatus.Batched;
+                                t.BatchId = batchId;
+                            })
+                        ));
 
-                    // Mark blobs as batched with batchId
-                    await Task.WhenAll(tags.Select(tag =>
-                        new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, t =>
-                        {
-                            t.Status = BlobStatus.Batched;
-                            t.BatchId = batchId;
-                        })
-                    ));
+                        log.LogInformation($"[Collector {@namespace}] Tags marked {tags.Count} blobs.\n BatchId: {batchId} \n TotalSize: {totalSize}.\nFiles: {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
 
-                    log.LogInformation($"[Collector {@namespace}] Tags marked {tags.Count} blobs.\n BatchId: {batchId} \n TotalSize: {totalSize}.\nFiles: {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+                        var activity = new TagBatchQueueItem() { Namespace = @namespace, BatchId = batchId, Container = tags[0].Container, Tags = tags.ToArray() };
 
-                    var activity = new TagBatchQueueItem() { Namespace = @namespace, BatchId = batchId, Container = tags[0].Container, Tags = tags.ToArray() };
+                        await collector.AddAsync(activity);
+                        await collector.FlushAsync();
 
-                    await collector.AddAsync(activity);
-                    await collector.FlushAsync();
+                        tags.Clear();
+                        totalSize = 0;
+                        TotalBatches++;
 
-                    tags.Clear();
-                    totalSize = 0;
-                    TotalBatches++;
+                        if (TotalBatches > MaxZipsPerExecution)
+                            return;
+                    }
                 }
-            }
 
             // if we finished the loop,
             // and the last items didnt add up to xMB, it will be handled in next loop 
 
-
-
-
-
-            //await foreach (BlobTags tag in containerClient.QueryAsync(t => t.Status == BlobStatus.Pending && t.Namespace == @namespace))
-            //{
-            //    log.LogInformation($"namespace:{@namespace} blob status ");           
-            //    totalSize += tag.Length;
-            //    hasOutdateBlobs |= tag.Modified < DateTime.UtcNow.Subtract(BlobOutdatedThreshold).ToFileTimeUtc();
-            //    tags.Add(tag);
-
-            //    if (totalSize.Bytes2Megabytes() > ZipBatchMaxSizeMB)
-            //    {
-            //        break;
-            //    }
-            //}
-
-            //if (totalSize.Bytes2Megabytes() < ZipBatchMinSizeMB && !hasOutdateBlobs)
-            //{
-            //    return;
-            //}
-
-           
+            }
         }
         catch (Exception ex)
         {

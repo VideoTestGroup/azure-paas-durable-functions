@@ -1,6 +1,17 @@
 {
     "version": "0.2.0",
     "configurations": [
+    {
+        "name": ".NET Core Launch (console)",
+        "type": "coreclr",
+        "request": "launch",
+        "preLaunchTask": "build",
+        "program": "C:\\Users\\user\\Documents\\ImageIngest\\azure-paas-durable-functions\\EventHub\\bin\\Debug\\net6.0\\EventHub.exe",
+        "args": [],
+        "cwd": "${workspaceFolder}",
+        "stopAtEntry": false,
+        "console": "internalConsole"
+    },
         {
             "name": "Attach to .NET Functions",
             "type": "coreclr",
