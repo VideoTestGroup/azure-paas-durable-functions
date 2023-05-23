@@ -36,7 +36,7 @@ public class Collector
 
         try
         {
-            string query = $@"""Status"" = 'Pending' AND ""Namespace"" = '{@namespace}'";
+            string query = $"Status eq 'Pending' AND Namespace eq '{@namespace}'";
             log.LogInformation($"[Collector] Query: {query}");
             IAsyncEnumerable<BlobTags> allBlobs = containerClient.QueryByTagsAsync(query);
             await foreach (BlobTags tag in allBlobs)
