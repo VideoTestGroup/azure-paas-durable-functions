@@ -38,7 +38,7 @@ public class Collector
 
         try
         {
-            string query = $"Status = 'Pending' AND Namespace = '{@namespace}' AND Length > ''";
+            string query = $"Status = 'Pending' AND Namespace = '{@namespace}' AND Length > '' AND Name > '' AND Container > ''";
             log.LogInformation($"[Collector] {@namespace} Query: {query}");
     
             await foreach (var page in containerClient.FindBlobsByTagsAsync(query).AsPages())
