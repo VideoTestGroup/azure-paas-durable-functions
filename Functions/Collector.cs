@@ -38,7 +38,7 @@ public class Collector
 
         try
         {
-            string query = $"Status = 'Pending' AND Namespace = '{@namespace}' AND Length > '' AND Name > '' AND Container > ''";
+            string query = $"Status = 'Pending' AND Namespace = '{@namespace}' AND Length > '' AND Container > ''";
             log.LogInformation($"[Collector] {@namespace} Query: {query}");
     
             await foreach (var page in containerClient.FindBlobsByTagsAsync(query).AsPages())
@@ -62,8 +62,10 @@ public class Collector
                         // Create batch id
                         string batchId = ActivityAction.CreateBatchId(@namespace, tags.Count);
 
+
+
                         // Mark blobs as batched with batchId
-                        await Task.WhenAll(tags.Select(tag =>
+                        await Task.WhenAll(tags.Select(tag => 
                             new BlobClient(AzureWebJobsFTPStorage, tag.Container, tag.Name).WriteTagsAsync(tag, t =>
                             {
                                 t.Status = BlobStatus.Batched;
@@ -72,6 +74,13 @@ public class Collector
                         ));
 
                         log.LogInformation($"[Collector {@namespace}] Tags marked {tags.Count} blobs.\n BatchId: {batchId} \n TotalSize: {totalSize}.\nFiles: {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+
+                        foreach (BlobTags t in tags
+                        )
+                        {
+                            t.Status = BlobStatus.Batched;
+                            t.BatchId = batchId;
+                        }
 
                         var activity = new TagBatchQueueItem() { Namespace = @namespace, BatchId = batchId, Container = tags[0].Container, Tags = tags.ToArray() };
 
