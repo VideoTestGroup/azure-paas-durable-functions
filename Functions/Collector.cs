@@ -44,6 +44,7 @@ public class Collector
             await foreach (var page in containerClient.FindBlobsByTagsAsync(query).AsPages())
             {
                 pageItems.AddRange(page.Values.Select(t => new BlobTags(t)));
+                log.LogInformation($"[Collector] pageItems.Count: {pageItems.Count()}");
 
                 foreach (BlobTags tag in pageItems)
                 {
