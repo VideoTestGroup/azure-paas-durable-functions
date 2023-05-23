@@ -39,22 +39,25 @@ public class Collector
         try
         {
             string query = $"Status = 'Pending' AND Namespace = '{@namespace}'";
-            log.LogInformation($"[Collector] Query: {query}");
+            log.LogInformation($"[Collector] {@namespace} Query: {query}");
     
             await foreach (var page in containerClient.FindBlobsByTagsAsync(query).AsPages())
             {
                 pageItems.AddRange(page.Values.Select(t => new BlobTags(t)));
-                log.LogInformation($"[Collector] pageItems.Count: {pageItems.Count()}");
+                log.LogInformation($"[Collector] {@namespace} pageItems.Count: {pageItems.Count()}");
 
                 foreach (BlobTags tag in pageItems)
                 {
                     totalSize += tag.Length;
                     tags.Add(tag);
 
+                    log.LogInformation($"[Collector] {@namespace} tag.Name: {tag.Name}, tag.Length: {tag.Length}, totalSize: {totalSize.Bytes2Megabytes()}, tags.Count: {tags.Count()}");
+
+
                     if (totalSize.Bytes2Megabytes() > ZipBatchMaxSizeMB)
                     {
                         // DO
-                        log.LogInformation($"[Collector {@namespace}] found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchMinSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
+                        log.LogInformation($"[Collector] {@namespace} found {tags.Count} blobs in total size {totalSize.Bytes2Megabytes()}MB(/{ZipBatchMinSizeMB}MB).\n {string.Join(",", tags.Select(t => $"{t.Name} ({t.Length.Bytes2Megabytes()}MB)"))}");
                         
                         // Create batch id
                         string batchId = ActivityAction.CreateBatchId(@namespace, tags.Count);
