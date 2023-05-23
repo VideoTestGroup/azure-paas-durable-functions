@@ -36,7 +36,7 @@ public class Collector
 
         try
         {
-            IAsyncEnumerable<BlobTags> allBlobs = containerClient.QueryByTagsAsync($"Status = 'Pending' AND Namespace = '{@namespace}'");
+            IAsyncEnumerable<BlobTags> allBlobs = containerClient.QueryByTagsAsync($@"""Status"" = 'Pending' AND ""Namespace"" = '{@namespace}'");
             await foreach (BlobTags tag in allBlobs)
             {
                 if (TotalBatches > MaxZipsPerExecution)
